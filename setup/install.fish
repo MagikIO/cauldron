@@ -12,8 +12,8 @@ set -Ux CAULDRON_LOCAL_FUNCTIONS (dirname $CAULDRON_SETUP_PATH)/functions
 function cauldron_plating
     set -gx CAULDRON_DEPENDENCIES $CAULDRON_PATH/dependencies.json
 
-    # Check if the cauldron dependencies file exists
-    if test -f $CAULDRON_DEPENDENCIES
+    # Check if the cauldron dependencies file exists and if the pallete.json exists
+    if test -f $CAULDRON_DEPENDENCIES -a -f $CAULDRON_PATH/config/palettes.json
         # And if so, we should quit if they share the same version
         set INSTALLED_VERSION (jq -r '.version' $CAULDRON_DEPENDENCIES)
         set LOCAL_VERSION (jq -r '.version' $CAULDRON_SETUP_PATH/dependencies.json)
@@ -38,6 +38,11 @@ function cauldron_plating
     # Create the configuration files
     if not test -f $CAULDRON_PATH/config/cauldron.json
         touch $CAULDRON_PATH/config/cauldron.json
+    end
+
+    # If they dont have `palettes.json` yet move it over
+    if not test -f $CAULDRON_PATH/config/palettes.json
+        cp $CAULDRON_SETUP_PATH/palettes.json $CAULDRON_PATH/config/palettes.json
     end
 
     # Create the log files
@@ -87,6 +92,10 @@ function cauldron_mise_en_place
 
     return 0
 end
+
+
+# We have to patch their version of `installs` with our version
+cpfunc ./functions -d
 
 cauldron_plating
 cauldron_mise_en_place
