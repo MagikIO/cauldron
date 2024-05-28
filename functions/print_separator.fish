@@ -21,7 +21,7 @@ function print_separator -d 'Print a separator with a centered message in the mi
     # Print top separator
     echo -n (string repeat -n $term_width "─")
     print_center $message
-    echo -n (string repeat -n $term_width "─")
+    echo (string repeat -n $term_width "─")
 
     return 0
 end

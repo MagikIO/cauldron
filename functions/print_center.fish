@@ -49,7 +49,7 @@ function print_center -d 'Print a message centered in terminal' -a width -a mess
     # Print the padding
     echo -n (string repeat -n $padding " ")
     # Print the message
-    echo -n $term_msg
+    echo $term_msg
 
     return 0
 
