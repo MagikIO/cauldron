@@ -2,8 +2,8 @@ function hr --description 'Prints a horizontal line'
     # Version Number
     set -l func_version "1.0.0"
     # Flag options
-    set -l options v/version h/help l/length s/symbol= e/easy=
-    argparse -n installs $options -- $argv
+    set -l options v/version h/help w/width= s/symbol= e/easy=
+    argparse -n horizontal-rule $options -- $argv
 
     # if they asked the version just return it
     if set -q _flag_version
@@ -19,7 +19,7 @@ function hr --description 'Prints a horizontal line'
         echo "Options:"
         echo "  -v, --version  Show version number"
         echo "  -h, --help     Show this help message"
-        echo "  -l, --length   The length of the line"
+        echo "  -l, --width   The width of the line"
         echo "  -s, --symbol   The symbol to use for the line"
         echo "  -e, --easy     Easy symbol reference"
         echo
@@ -42,10 +42,10 @@ function hr --description 'Prints a horizontal line'
         return 0
     end
 
-    # Set the length of the line
-    set length (tput cols)
-    if set -q _flag_length
-        set length $_flag_length
+    # Set the width of the line
+    set width (tput cols)
+    if set -q _flag_width
+        set width $_flag_width
     end
 
     # Set the symbol to use for the line
@@ -87,8 +87,8 @@ function hr --description 'Prints a horizontal line'
     end
 
     # Print the line
-    for i in (seq 1 $length)
-        echo -n $symbol
+    for i in (seq 1 $width)
+        echo -ne $symbol
     end
 
     return 0

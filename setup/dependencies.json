@@ -1,5 +1,5 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.6",
   "apt": [
     "bat", "cbonsai", "cowsay",
     "fortune", "jp2a", "linuxlogo", "pv",

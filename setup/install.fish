@@ -6,7 +6,8 @@
 set -Ux CAULDRON_PATH $HOME/.config/cauldron
 set CAULDRON_SETUP_PATH (dirname (status -f))
 # functions are up a directory from set up path in functions fodler
-set -Ux CAULDRON_LOCAL_FUNCTIONS (dirname $CAULDRON_SETUP_PATH)/functions
+set CAULDRON_LOCAL_FUNCTIONS (dirname $CAULDRON_SETUP_PATH)/functions
+set CAULDRON_LOCAL_BIN_FNs ./bin
 
 # Prep the environment for the installation
 function cauldron_plating
@@ -37,7 +38,7 @@ function cauldron_plating
 
     # Create the configuration files
     if not test -f $CAULDRON_PATH/config/cauldron.json
-        touch $CAULDRON_PATH/config/cauldron.json
+        cp $CAULDRON_SETUP_PATH/cauldron.json $CAULDRON_PATH/config/cauldron.json
     end
 
     # If they dont have `palettes.json` yet move it over
@@ -57,6 +58,12 @@ function cauldron_plating
 
     # Copy the dependencies file
     cp $CAULDRON_SETUP_PATH/dependencies.json $CAULDRON_DEPENDENCIES
+
+    # Loop through each function in the bin folder and copy it over
+    for file in (ls $CAULDRON_LOCAL_BIN_FNs)
+        cp $CAULDRON_LOCAL_BIN_FNs/$file $CAULDRON_PATH/bin/$file
+    end
+
 
     return 0
 end

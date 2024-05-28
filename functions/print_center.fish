@@ -5,7 +5,7 @@ function print_center -d 'Print a message centered in terminal' -a width -a mess
     # Version Number
     set -l func_version "1.0.0"
     # Flag options
-    set -l options v/version h/help
+    set -l options v/version h/help i/inline
     argparse -n print_center $options -- $argv
 
     # if they asked the version just return it
@@ -49,7 +49,7 @@ function print_center -d 'Print a message centered in terminal' -a width -a mess
     # Print the padding
     echo -n (string repeat -n $padding " ")
     # Print the message
-    echo $term_msg
+    echo -n $term_msg
 
     return 0
 
