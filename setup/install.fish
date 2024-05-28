@@ -55,9 +55,6 @@ function cauldron_plating
         touch $CAULDRON_PATH/data/cauldron.db
     end
 
-    # Copy the local functions
-    cpfunc ../functions -d
-
     # Copy the dependencies file
     cp $CAULDRON_SETUP_PATH/dependencies.json $CAULDRON_DEPENDENCIES
 
@@ -95,7 +92,7 @@ end
 
 
 # We have to patch their version of `installs` with our version
-cpfunc ./functions -d
+cpfunc ./functions/ -d
 
 cauldron_plating
 cauldron_mise_en_place
