@@ -1,0 +1,3 @@
+function banner --argument txt
+    toilet $CAULDRON_BANNER_RENDER_OPTION -f $CAULDRON_BANNER_FONT -F $CAULDRON_BANNER_FILTER_OPTION $txt
+end
