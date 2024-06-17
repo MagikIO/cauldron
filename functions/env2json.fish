@@ -27,7 +27,7 @@ function env2json --description 'Converts the current environment variables to a
     end
 
     # Define the path where the JSON file will be saved
-    set output_file $CAULDRON_PATH/config/env.json
+    set output_file $CAULDRON_PATH/user/env.json
 
     # If the user specifies an output file, use that instead
     if set -q _flag_output
