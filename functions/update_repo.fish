@@ -12,7 +12,7 @@ function install_asdf
     print_center "🤹 ASDF Installed 🤹"
 
     # Set asdf as the preferred version manager
-    set -gx cauldron_packman_pref asdf
+    set -Ux cauldron_packman_pref asdf
 end
 
 function asdf_set_node_version
@@ -58,7 +58,7 @@ function nvm_set_node_version
     else
         nvm install latest
         nvm use latest
-        set -gx nvm_default_version (node --version)
+        set -Ux nvm_default_version (node --version)
     end
 
     # Install the version of node specified in the .nvmrc file, if it's not already installed
@@ -73,7 +73,7 @@ function nvm_set_node_version
     nvm alias default $nvm_node_version
 
     # Set the default version of node
-    set -gx nvm_default_version $nvm_node_version
+    set -Ux nvm_default_version $nvm_node_version
 
     # Enable corepack
     corepack enable
@@ -131,17 +131,17 @@ function update_repo
     # 3. If asdf is installed, prefer asdf
     # 4. If nvm is installed, prefer nvm
     # 5. If none of the above, we need to prompt the user if we can install asdf
-    set -gx cauldron_packman_pref asdf
+    set -Ux cauldron_packman_pref asdf
     if test -f .tool-versions
-        set -gx cauldron_packman_pref asdf
+        set -Ux cauldron_packman_pref asdf
     else if test -f .nvmrc
-        set -gx cauldron_packman_pref nvm
+        set -Ux cauldron_packman_pref nvm
     else if type -q asdf
-        set -gx cauldron_packman_pref asdf
+        set -Ux cauldron_packman_pref asdf
     else if type -q nvm
-        set -gx cauldron_packman_pref nvm
+        set -Ux cauldron_packman_pref nvm
     else
-        set -gx cauldron_packman_pref none
+        set -Ux cauldron_packman_pref none
     end
 
     # If the pref version manager is none then we need to prompt the user and ask if we can install asdf
