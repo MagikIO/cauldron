@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "autoclean",
     "cbonsai",
     "chaffa",
     "cowsay",
@@ -14,17 +15,38 @@
   },
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "files.exclude": {
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
-    "**/CVS": true,
-    "**/.DS_Store": true,
-    "**/Thumbs.db": true,
-    "**/.*": true,
-    "eslint*.*": true,
-    "**/tmp/**": true,
-    "**/node_modules/**": true,
-    "**/.git/objects/**": true
+    "**/.git": false,
+    "**/.svn": false,
+    "**/.hg": false,
+    "**/CVS": false,
+    "**/.DS_Store": false,
+    "**/Thumbs.db": false,
+    "**/.*": false,
+    "eslint*.*": false,
+    "**/tmp/**": false,
+    "**/node_modules/**": false,
+    "**/.git/objects/**": false
   },
-  "explorerExclude.backup": {}
+  "explorerExclude.backup": {},
+  "cSpell.enableFiletypes": [
+    "bat",
+    "dotenv",
+    "editorconfig",
+    "env",
+    "fish",
+    "github-actions-workflow",
+    "http",
+    "ignore",
+    "ini",
+    "jsx-tags",
+    "log",
+    "properties",
+    "search-result",
+    "shellscript",
+    "snippets",
+    "sql",
+    "svelte",
+    "type",
+    "vitest-snapshot"
+  ]
 }

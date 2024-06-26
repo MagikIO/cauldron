@@ -31,11 +31,11 @@ function update_repo
     git visual-checkout
     git pull
 
-    print_separator "✂️ Trimming uneeded branches ✂️"
+    print_separator "✂️ Trimming unneeded branches ✂️"
     git gone
 
     print_separator "🆙 Updating your system 🆙"
-    sudo apt -y update && sudo apt -y upgrade
+    sudo apt -y update && sudo apt -y upgrade && sudo apt -y autoclean
 
     # Update Homebrew
     print_separator "⚗️ Updating Homebrew ⚗️"
