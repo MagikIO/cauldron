@@ -7,7 +7,7 @@ If you've ever felt like you need a familiar when working in terminal, you've co
 To install simply clone the repo then run the install script.
 
 ```shell
-  mkdir -p ~/.cauldron;
-  git clone https://github.com/MagikIO/cauldron.git ~/.cauldron;
-  ~/.cauldron/install.fish;
+mkdir -p ~/.cauldron;
+git clone https://github.com/MagikIO/cauldron.git ~/.cauldron;
+~/.cauldron/install.fish;
 ```
