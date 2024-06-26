@@ -12,23 +12,25 @@ function install_asdf
     print_center "🤹 ASDF Installed 🤹"
 
     # Set asdf as the preferred version manager
-    set -Ux aquarium_preferred_version_manager asdf
+    set -gx cauldron_packman_pref asdf
 end
 
-function asdf-set-node-version
+function asdf_set_node_version
     if test -f .tool-versions
-        set -l asdf_node_version (awk '/nodejs/ {print $2}' .tool-versions)
+        set asdf_node_version (awk '/nodejs/ {print $2}' .tool-versions)
         asdf local nodejs $asdf_node_version
+        asdf install nodejs $asdf_node_version
     else if test -f ~/.tool-versions
-        set -l asdf_node_version (awk '/nodejs/ {print $2}' ~/.tool-versions)
+        set asdf_node_version (awk '/nodejs/ {print $2}' ~/.tool-versions)
         asdf local nodejs $asdf_node_version
+        asdf install nodejs $asdf_node_version
     else
         asdf local nodejs latest
+        asdf install nodejs latest
     end
 
     # Enable corepack
     corepack enable
-
     # Reshim node
     asdf reshim nodejs
 
@@ -48,15 +50,15 @@ function asdf-set-node-version
     end
 end
 
-function nvm-set-node-version
+function nvm_set_node_version
     if test -f .nvmrc
-        set -l nvm_node_version (cat .nvmrc)
+        set nvm_node_version (cat .nvmrc)
     else if test -f ~/.nvmrc
-        set -l nvm_node_version (cat ~/.nvmrc)
+        set nvm_node_version (cat ~/.nvmrc)
     else
         nvm install latest
         nvm use latest
-        set -Ux nvm_default_version (node --version)
+        set -gx nvm_default_version (node --version)
     end
 
     # Install the version of node specified in the .nvmrc file, if it's not already installed
@@ -71,7 +73,7 @@ function nvm-set-node-version
     nvm alias default $nvm_node_version
 
     # Set the default version of node
-    set -Ux nvm_default_version $nvm_node_version
+    set -gx nvm_default_version $nvm_node_version
 
     # Enable corepack
     corepack enable
@@ -84,7 +86,11 @@ function nvm-set-node-version
         yarn add -D typescript @types/node
     end
 
-    yarn dlx @yarnpkg/sdks base vscode
+    # Add the vscode sdk
+    has_node_modules
+    if test $status -eq 1
+        yarn dlx @yarnpkg/sdks base vscode
+    end
 end
 
 function package_manifest_has_typescript
@@ -125,21 +131,21 @@ function update_repo
     # 3. If asdf is installed, prefer asdf
     # 4. If nvm is installed, prefer nvm
     # 5. If none of the above, we need to prompt the user if we can install asdf
-    set -Ux aquarium_preferred_version_manager asdf
+    set -gx cauldron_packman_pref asdf
     if test -f .tool-versions
-        set -Ux aquarium_preferred_version_manager asdf
+        set -gx cauldron_packman_pref asdf
     else if test -f .nvmrc
-        set -Ux aquarium_preferred_version_manager nvm
+        set -gx cauldron_packman_pref nvm
     else if type -q asdf
-        set -Ux aquarium_preferred_version_manager asdf
+        set -gx cauldron_packman_pref asdf
     else if type -q nvm
-        set -Ux aquarium_preferred_version_manager nvm
+        set -gx cauldron_packman_pref nvm
     else
-        set -Ux aquarium_preferred_version_manager none
+        set -gx cauldron_packman_pref none
     end
 
     # If the pref version manager is none then we need to prompt the user and ask if we can install asdf
-    if test $aquarium_preferred_version_manager = none
+    if test $cauldron_packman_pref = none
         print_center "You seem to be missing a version manager for Node. Is it alright if the fish install asdf, and the most current version of node for you?"
         set continue_prompt_result (promptConfirm "This will install asdf, and add the most current version of node, but only alias a Node version for this repo. Continue?")
         if test $continue_prompt_result -eq 0
@@ -149,19 +155,19 @@ function update_repo
     end
 
     # If they prefer asdf
-    if test $aquarium_preferred_version_manager = asdf
+    if test $cauldron_packman_pref = asdf
         # First we need to see if they have asdf installed
         if not type -q asdf
             install_asdf
         end
         # Then we need to set the node version
-        asdf-set-node-version
+        asdf_set_node_version
     end
 
     # If they prefer nvm
-    if test $aquarium_preferred_version_manager = nvm
+    if test $cauldron_packman_pref = nvm
         # We need to set the node version
-        nvm-set-node-version
+        nvm_set_node_version
     end
 
     print_separator "⬆️ Updating Branch ⬆️"
@@ -187,10 +193,5 @@ function update_repo
     print_separator "🧶 Upgrading dependencies 🧶"
     yarn upgrade-interactive
 
-    print_separator "🧶 Installing newest yarn sdks 🧶"
-    has_node_modules
-    if test $status -eq 1
-        yarn dlx @yarnpkg/sdks base vscode
-    end
     exit 0
 end
