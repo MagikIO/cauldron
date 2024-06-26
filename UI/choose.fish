@@ -9,7 +9,10 @@ function choose
         echo "You must pass in choices for the user to choose from."
         return 1
     end
-
+    
+    # First unset the var
+    set -e CAULDRON_LAST_CHOICE
+    # Then set the var to the choice
     set -Ux CAULDRON_LAST_CHOICE (shiny choose $argv)
 
     # Now we see if the var is set, if so we exit successfully
