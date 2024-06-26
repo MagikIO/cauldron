@@ -26,7 +26,7 @@ function aquarium -d 'List your fishies, update your aquarium, and more'
     set -Ux AQUA__CONFIG_FILE "$AQUARIUM_INSTALL_DIR/user_theme.fish"
 
     # Flags
-    set -l options "v/version" "h/help" "u/update" "l/list" "e/edit"
+    set -l options v/version h/help u/update l/list e/edit
     argparse -n installs $options -- $argv
 
     # If they asked the version return it
@@ -94,7 +94,7 @@ function aquarium -d 'List your fishies, update your aquarium, and more'
         print_separator " Cleaning and refilling your aquarium... "
         pushd $AQUARIUM_INSTALL_DIR
         # Make a temporary dir in the cache folder to house the `bak` folder and the user theme
-        set -l tmp_dir (mktemp -d);
+        set -l tmp_dir (mktemp -d)
         # Back up the user theme file to a different location
         cp $AQUA__CONFIG_FILE $tmp_dir/user_theme.fish
         # IF the bak folder exist in the aquarium directory, move it to the temp dir
@@ -123,5 +123,3 @@ function aquarium -d 'List your fishies, update your aquarium, and more'
         return
     end
 end
-
-

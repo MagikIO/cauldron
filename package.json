@@ -1,0 +1,43 @@
+{
+  "name": "@magik_io/cauldron",
+  "version": "0.0.3",
+  "description": "With the help of your beloved familiar, become an arcane master of the cauldron",
+  "engines": {
+    "node": "22",
+    "yarn": "4.3.1"
+  },
+  "scripts": {
+    "run": "tsx node/index.ts",
+    "iterate": "npm version patch && git push origin master --tags && npm publish --access public"
+  },
+  "dependencies": {
+    "consola": "^3.2.3",
+    "sql-template-tag": "^5.2.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@magik_io/lint_golem": "^2.2.1",
+    "@types/node": "^20.14.9",
+    "eslint": "^9.5.0",
+    "typescript": "^5.5.2",
+    "typescript-eslint": "^7.14.1"
+  },
+  "authors": [
+    {
+      "name": "Antonio B.",
+      "email": "Abourassa@AssetVal.com",
+      "github": "https://github.com/Abourass"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MagikIO/cauldron.git"
+  },
+  "browserslist": [
+    "last 2 version",
+    "> 1%"
+  ],
+  "license": "MIT",
+  "packageManager": "yarn@4.3.1"
+}
