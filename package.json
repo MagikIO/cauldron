@@ -1,6 +1,6 @@
 {
   "name": "@magik_io/cauldron",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "description": "With the help of your beloved familiar, become an arcane master of the cauldron",
   "engines": {
     "node": "22",
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "run": "tsx node/index.ts",
+    "changelogs": "git cliff -o CHANGELOG.md",
     "iterate": "npm version patch && git push origin master --tags && npm publish --access public"
   },
   "dependencies": {
