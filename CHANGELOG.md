@@ -2,7 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+### ⚙️ Miscellaneous Tasks
+
+- Update npm dependency to latest stable version
+
+## [0.0.7] - 2024-06-27
+
+### 🚀 Features
+
+- Add getLatestGithubReleaseAsJSON function to retrieve the latest release of a GitHub repository
+- Add getLatestGithubReleaseTag function to retrieve the latest GitHub release tag
+- Add update_cauldron.fish script to check for Cauldron updates
+- Add orbiting-volley-effect function
+- Add rain-effect function
+- Add shebang line to vhs-effect.fish
+- Update update_cauldron.fish script to improve Cauldron update prompt
+
+### ⚙️ Miscellaneous Tasks
+
+- Moved `shiny.fish` into the alias dir, from the text dir
+- Refactor rainbow-fish.fish to move it from the text directory to the alias directory
+- Marked styled-banner as not ready for release
+- Update .vscode settings to exclude version control files and directories
+
+## [0.0.5] - 2024-06-26
 
 ### 🚀 Features
 
