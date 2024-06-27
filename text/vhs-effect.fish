@@ -1,3 +1,5 @@
+#!/usr/bin/env fish
+
 function vhs-effect
     # Default values
     set -l final_gradient_stops ab48ff e7b2b2 fffebd
