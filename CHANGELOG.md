@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
+- Refactor cpfunc.fish function to use argparse for command line options
+- Add `dev-it` function documentation
+- Update documentation path and add new-docs flag to cauldron command
+- Refactor fished.fish and peek-at-fish.fish functions, improve code readability and remove unused code
+- Add `peek-at-fish` function for enhanced Fish shell experience
+- Add `load_path_first` function to modify the `PATH` environment variable in Fish shell
+
+### ⚙️ Miscellaneous Tasks
+
+- Update iterate.fish to generate changelogs and push to main branch
+- Update .gitignore to include all version control files
+- Update .gitignore to include all version control files
+
+## [0.0.8] - 2024-06-28
+
+### 🚀 Features
+
 - Add iterate function to move npm package forward and post it up
 - Refactor node_init.fish function to improve readability and add command line options
 
@@ -14,6 +31,7 @@ All notable changes to this project will be documented in this file.
 - Update changelog
 - Update package.json repository URL to use git+https protocol
 - Update iterate.fish to generate changelogs and push to main branch
+- Update changelog
 
 ## [0.0.7] - 2024-06-27
 
