@@ -1,12 +1,8 @@
 function load_path_first --description 'Move a directory to the start of PATH'
     set -l func_version "1.0.0"
 
-    # Define options using fish_opt
-    set -l options (fish_opt --short=v --long=version)
-    set options $options (fish_opt --short=h --long=help)
-
-    argparse $options -- $argv
-
+    set -l options "v/version" "h/help"
+    argparse -n load_path_first $options -- $argv
 
     # if they asked the version just return it
     if set -q _flag_version

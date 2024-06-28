@@ -3,7 +3,7 @@ function bak -d 'Backup a file (make a copy with .bak extension)' -a file -d "Fi
   set -l func_version "1.0.2"
   # Flag options
   set -l options "v/version" "h/help" "V/verbose" "n/dry-run"
-  argparse -n installs $options -- $argv
+  argparse -n bak $options -- $argv
 
   # if they asked the version just return it
   if set -q _flag_version
