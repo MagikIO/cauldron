@@ -2,9 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-### ⚙️ Miscellaneous Tasks
+## [unreleased]
 
-- Update npm dependency to latest stable version
+### 🚀 Features
+
+- Add iterate function to move npm package forward and post it up
+- Refactor node_init.fish function to improve readability and add command line options
 
 ## [0.0.7] - 2024-06-27
 
@@ -17,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - Add rain-effect function
 - Add shebang line to vhs-effect.fish
 - Update update_cauldron.fish script to improve Cauldron update prompt
+- Update npm dependency to latest stable version
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -24,6 +28,7 @@ All notable changes to this project will be documented in this file.
 - Refactor rainbow-fish.fish to move it from the text directory to the alias directory
 - Marked styled-banner as not ready for release
 - Update .vscode settings to exclude version control files and directories
+- Update npm dependency to latest stable version
 
 ## [0.0.5] - 2024-06-26
 
