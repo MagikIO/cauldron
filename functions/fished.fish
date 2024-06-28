@@ -3,11 +3,8 @@
 function fished
   set -l func_version "1.0.0"
 
-  set -l options (fish_opt -s v -l version)
-  set options $options (fish_opt -s h -l help)
-  set options $options (fish_opt -s l -l list)
-
-  argparse $options -- $argv
+  set -l options "v/version" "h/help" "l/list"
+  argparse -n fished $options -- $argv
 
   # if they asked the version just return it
   if set -q _flag_version
@@ -45,9 +42,6 @@ function fished
     # Move to the functions location
     pushd $function_directory
     code $selected_fn.fish &
-
-    create_service -n fished_watcher -s "spyglass -f (functions -D $selected_fn)"
-
     # Return to the previous directory
     popd
     return 0
@@ -56,7 +50,6 @@ function fished
   # Move to the functions location
   pushd dirname (functions -D $argv)
   code $argv.fish &
-  create_service -n fished_watcher -s "spyglass -f (functions -D $argv)"
   popd
   return 0
 end
