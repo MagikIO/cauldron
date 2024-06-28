@@ -1,6 +1,6 @@
-# [`dev-it`](../../functions/dev-it.fish)
+# `dev-it`
 
-The `dev-it` function is a utility function that allows users to easily to switch packages between development dependencies and main dependencies in a Node.js project
+[`dev-it`](../../functions/dev-it.fish) is a utility function that allows users to easily to switch packages between development dependencies and main dependencies in a Node.js project
 
 ## Version
 

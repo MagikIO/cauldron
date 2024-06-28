@@ -1,8 +1,8 @@
-# [`env2json.fish`](../../functions/env2json.fish)
+# `env2json`
 
 ## Overview
 
-[`env2json.fish`](../../functions/env2json.fish) is a utility script that converts the current environment variables into a JSON file. This script is particularly useful for capturing the state of environment variables at a given point in time and saving them in a structured format that can be easily shared, reviewed, or archived.
+[`env2json`](../../functions/env2json.fish) is a utility script that converts the current environment variables into a JSON file. This script is particularly useful for capturing the state of environment variables at a given point in time and saving them in a structured format that can be easily shared, reviewed, or archived.
 
 ## Features
 

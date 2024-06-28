@@ -1,6 +1,6 @@
-# [`update_repo`](../../functions/update_repo.fish)
+# `update_repo`
 
-The [`update_repo`](../../functions/update_repo.fish) script is a tool designed to streamline the maintenance process of your projects. This script automates several routine tasks to ensure that the development environment remains up-to-date and optimized for performance. It's designed to be run automatically whenever Visual Studio Code is opened, but can also be executed manually from the terminal.
+[`update_repo`](../../functions/update_repo.fish) is a tool designed to streamline the maintenance process of your projects. This script automates several routine tasks to ensure that the development environment remains up-to-date and optimized for performance. It's designed to be run automatically whenever Visual Studio Code is opened, but can also be executed manually from the terminal.
 
 ## Version
 

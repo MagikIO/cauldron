@@ -1,6 +1,6 @@
-# [`installs.fish`](../../functions/installs.fish)
+# `installs`
 
-[`installs.fish`](../../functions/installs.fish) is a comprehensive Fish shell script designed to streamline the installation of software across different package managers including APT (for Debian-based systems), Homebrew (for macOS and Linux), and Snap (for Snap-supported Linux distributions). This script not only facilitates the installation of individual programs but also supports batch installations from a JSON-formatted dependency file.
+[`installs`](../../functions/installs.fish) is a comprehensive Fish shell script designed to streamline the installation of software across different package managers including APT (for Debian-based systems), Homebrew (for macOS and Linux), and Snap (for Snap-supported Linux distributions). This script not only facilitates the installation of individual programs but also supports batch installations from a JSON-formatted dependency file.
 
 ## Version
 

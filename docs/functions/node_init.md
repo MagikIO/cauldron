@@ -1,6 +1,6 @@
-# [`node_init`](../functions/node_init.fish)
+# `node_init`
 
-The [`node_init`](../functions/node_init.fish) create a new Nodejs w/ Typescript project in the folder it's run. It allows setting project details such as name, description, author, scope, and license directly through command-line options, as well as supporting config files for more detailed setups.
+[`node_init`](../functions/node_init.fish) creates a new Nodejs w/ Typescript project in the folder it's run. It allows setting project details such as name, description, author, scope, and license directly through command-line options, as well as supporting config files for more detailed setups.
 
 ## Version
 

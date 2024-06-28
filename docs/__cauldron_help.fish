@@ -1,6 +1,9 @@
 #!/usr/bin/env fish
 
 function __cauldron_help
+  set -l options c/category
+  argparse -n cauldron_help $options -- $argv
+
   # First we need to make sure that glow is installed
   if not type -q glow
     brew install glow
@@ -182,10 +185,37 @@ function __cauldron_help
     complete -c glow -n '__glow_prepare_completions' -f -a '$__glow_comp_results'
   end
 
+  # Documentation Category
+  set doc_categories "Functions" "Alias" "UI" "Text" "Internal"
+  set __doc_category "Functions"
+
+  if set -q _flag_category
+    set __doc_category $_flag_category
+  end
+
+  function change_category -a index
+    # if the index is -1 we move back a category, if it's 1 we move forward
+    set -l current_index (math (math --scale 0 (math --scale 0 (string match -r -- '.*\t' $__doc_category) + $index) % (count $doc_categories)))
+    set __doc_category (string join " " $doc_categories[$current_index])
+  end
+
+  # terminal width
+  set term_width (tput cols)
+  # Reduce to 80% of the terminal width
+  set term_width (math (math --scale 0 $term_width \* 0.8))
+
+  shiny style \
+    --foreground 212 --border-foreground 212 --border double \
+    --align center --width $term_width --margin "1 2" --padding "2 4" \
+    "Cauldron Documentation - $__doc_category" "Press Enter to open the documentation in full-screen" \
+    "Press Ctrl-e to edit the documentation, or Ctrl-f to preview with bat" \
+    "Change documentation categories with ctrl+n or ctrl+m to cycle the documentation category"
+
   set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+  set __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__doc_category"
 
   # Generate a list of markdown files with their paths
-  set -l mdFiles (find $__CAULDRON_DOCUMENTATION_PATH -type f -name '*.md')
+  set -l mdFiles (find $__CAULDRON_DOC_CATEGORY_PATH -type f -name '*.md')
 
   function extract_file_names
     for path in $argv
@@ -216,9 +246,17 @@ function __cauldron_help
   # Use fzf with the modified list
   # Display names are shown to the user, but actions use the full path
   echo -e $displayList |
-    fzf --delimiter='\t' --with-nth=1 --preview 'glow {2} -s dark' --preview-window=right:70%:wrap \
+    fzf --delimiter='\t' \
+    --with-nth=1 \
+    --preview 'glow {2} -s dark' \
+    --preview-window=right:50%:wrap \
     --bind 'enter:execute(glow {2})' \
-    --bind 'ctrl-y:execute-silent(echo {2} | xclip -selection clipboard)' \
-    --bind 'ctrl-e:execute(glow {2} | less)' \
-    --bind 'ctrl-f:execute(glow {2} | bat -l md --paging=always)'
+    --bind 'ctrl-e:execute($EDITOR {2})' \
+    --bind 'ctrl-f:execute(glow {2} | bat -l md --paging=always)' \
+    --bind 'ctrl-n:execute(change_category -1; change-prompt($__doc_category> ); reload)' \
+    --bind 'ctrl-m:execute(change_category 1; change-prompt($__doc_category> ); reload)' \
+    --prompt 'Function> ' \
+    --header 'Enter to open full-screen, Ctrl-e: Edit Documentation, Ctrl-f: Preview with bat' \
+    --ansi \
+    --height 80%
 end

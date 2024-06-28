@@ -1,4 +1,4 @@
-# [`save_theme`](../../functions/save_theme.fish)
+# `save_theme`
 
 ## Overview
 
@@ -13,7 +13,7 @@
 
 ## Usage
 
-```fish
+```shell
 save_theme [options] var_key var_value
 ```
 

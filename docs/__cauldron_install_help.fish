@@ -4,7 +4,7 @@ function __cauldron_install_help
     set -l func_version "1.0.0"
 
     # Flag options
-    set -l options v/version h/help s/src=
+    set -l options v/version h/help s/src= c/category=
     argparse -n cauldron_install_help $options -- $argv
 
     # if they asked the version just return it
@@ -25,7 +25,15 @@ function __cauldron_install_help
         return 0
     end
 
-    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+    # Documentation Category
+    set doc_categories "Functions" "Alias" "UI" "Text" "Internal"
+    set __doc_category "Functions"
+
+    if set -q _flag_category
+      set __doc_category $_flag_category
+    end
+
+    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs/$__doc_category
 
     # We need to make sure the docs directory exists
     if not test -d $__CAULDRON_DOCUMENTATION_PATH

@@ -1,6 +1,6 @@
-# [`fished`](../../functions/fished.fish)
+# `fished`
 
-The [`fished`](../../functions/fished.fish) is a utility function for Fish. It lets you quickly open a fish function in your preferred editor, or list your installed fish functions, previewing their code, and letting you open which ever you prefer
+[`fished`](../../functions/fished.fish) lets you quickly open a fish function in your preferred editor, or list your installed fish functions, previewing their code, and letting you open which ever you prefer
 
 ## Version
 

@@ -1,6 +1,6 @@
-# [`cpfunc`](../functions/cpfunc.fish)
+# `cpfunc`
 
-The `cpfunc` function is a utility designed for the Fish shell that simplifies the process of copying Fish functions to the appropriate functions directory and sourcing them. This function is particularly useful for managing custom Fish functions, allowing users to easily distribute and install them.
+[`cpfunc`](../../functions/cpfunc.fish) is a utility designed for the Fish shell that simplifies the process of copying Fish functions to the appropriate functions directory and sourcing them. This function is particularly useful for managing custom Fish functions, allowing users to easily distribute and install them.
 
 ## Version
 
