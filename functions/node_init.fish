@@ -1,43 +1,41 @@
 #!/usr/bin/env fish
 
-function node_init --description "Initialize a Node.js project with Yarn and Typescript"
+function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     set -l func_version "2.0.0"
-
+    
     # Define options that can be passed
-    set -l options (fish_opt -s v -l version)
-    set options $options (fish_opt -s h -l help)
-    set options $options (fish_opt -s n -l name)
-    set options $options (fish_opt -s d -l description)
-    set options $options (fish_opt -s a -l author)
-    set options $options (fish_opt -s s -l scope)
-    set options $options (fish_opt -s l -l license)
-    set options $options (fish_opt -s c -l config)
+    set -l options "v/version" "h/help" "n/name" "d/description" "a/author" "s/scope" "l/license" "c/config"
+    argparse -n node_init $options -- $argv
 
-    argparse $options -- $argv
-
-    # If the user passes the help flag, display the help message
+    # If the for version return the version
     if set -q _flag_v; or set -q _flag_version
-        echo "Usage: node_init [options]"
-        echo ""
-        echo "Options:"
-        echo "  -h, --help       Display this help message"
-        echo "  -v, --version    Display the version of the function"
-        echo "  -n, --name       The name of the project"
-        echo "  -d, --description The description of the project"
-        echo "  -a, --author     The author of the project"
-        echo "  -s, --scope      The scope of the project"
-        echo "  -l, --license    The license of the project"
-        echo "  -c, --config     The path to a config file"
-        return 0
+      echo "node_init $func_version"
+      return 0
     end
 
-    # If they asked for the version, return the version
+    # If they asked for help return help
     if set -q _flag_h; or set -q _flag_help
-        echo "node_init $func_version"
-        return 0
+      echo "Usage: node_init [options]"
+      echo ""
+      echo "Options:"
+      echo "  -h, --help       Display this help message"
+      echo "  -v, --version    Display the version of the function"
+      echo "  -n, --name       The name of the project"
+      echo "  -d, --description The description of the project"
+      echo "  -a, --author     The author of the project"
+      echo "  -s, --scope      The scope of the project"
+      echo "  -l, --license    The license of the project"
+      echo "  -c, --config     The path to a config file"
+      return 0
     end
 
-    print_separator "Initializing a Magik Node.js project"
+    # Check if the f-says command is avail
+    if command -q f-says
+        f-says "Initializing a Node.js project for you.."
+    else
+        echo "Initializing a Node.js project for you.."
+    end
+    
 
     # Check for the env variable AQUA__NODE_INIT_CONFIG and set _flag_c to equal its value
     if set -q AQUA__NODE_INIT_CONFIG
@@ -48,7 +46,7 @@ function node_init --description "Initialize a Node.js project with Yarn and Typ
     # If the user passes a config (JSON) file, read it and set the values
     if set -q _flag_c; or set -q _flag_config
         # Style the name of the config file
-        printf "Using environmental config file: %s" $_config_file
+        printf "Using the following page from your grimoire (config file): %s" $_config_file
 
         if test -n "$_config_file"
             bat $_config_file --language json
