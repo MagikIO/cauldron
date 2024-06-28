@@ -1,6 +1,6 @@
 {
   "name": "@magik_io/cauldron",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "With the help of your beloved familiar, become an arcane master of the cauldron",
   "engines": {
     "node": "22",
