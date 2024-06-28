@@ -8,8 +8,7 @@
   },
   "scripts": {
     "run": "tsx node/index.ts",
-    "changelogs": "git cliff -o CHANGELOG.md",
-    "iterate": "npm version patch && git push origin master --tags && npm publish --access public"
+    "iterate": "iterate"
   },
   "dependencies": {
     "consola": "^3.2.3",
