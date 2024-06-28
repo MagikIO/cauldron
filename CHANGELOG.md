@@ -9,6 +9,12 @@ All notable changes to this project will be documented in this file.
 - Add iterate function to move npm package forward and post it up
 - Refactor node_init.fish function to improve readability and add command line options
 
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog
+- Update package.json repository URL to use git+https protocol
+- Update iterate.fish to generate changelogs and push to main branch
+
 ## [0.0.7] - 2024-06-27
 
 ### 🚀 Features
