@@ -1,10 +1,10 @@
 #!/usr/bin/env fish
 
 function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
-    set -l func_version "2.0.0"
+    set -l func_version "2.1.0"
     
     # Define options that can be passed
-    set -l options "v/version" "h/help" "n/name" "d/description" "a/author" "s/scope" "l/license" "c/config"
+    set -l options "v/version" "h/help" "n/name" "d/description" "a/author" "s/scope" "l/license" "c/config" "C/create_config"
     argparse -n node_init $options -- $argv
 
     # If the for version return the version
@@ -26,6 +26,45 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
       echo "  -s, --scope      The scope of the project"
       echo "  -l, --license    The license of the project"
       echo "  -c, --config     The path to a config file"
+      echo "  -C, --create_config  Create a config file"
+      return 0
+    end
+
+    # if they choose the create_config option, create a config file
+    if set -q _flag_C; or set -q _flag_create_config
+      # See if the f-says command is avail
+      if command -q f-says
+          f-says "Creating a config file"
+      else
+          echo "Creating a config file"
+      end
+
+      mkdir =p ~/.config/magik
+      touch ~/.config/magik/conf.json
+
+      # Fetch Git configuration
+      set git_name (git config --get user.name)
+      set git_email (git config --get user.email)
+
+      # Create the JSON content
+      echo "{\n" \
+      > "  \"author\": {\n" \
+      > "    \"name\": \"$git_name\",\n" \
+      > "    \"email\": \"$git_email\"\n" \
+      > "  },\n" \
+      > "  \"scripts\": {\n" \
+      > "    \"iterate\": \"iterate\"\n" \
+      > "  }\n" \
+      > "}" > ~/.config/magik/conf.json
+
+      # Check if the styled-banner command is avail
+      if command -q styled-banner
+          styled-banner "Created!"
+      else
+          echo "Config file created"
+      end
+
+      set -gx AQUA__NODE_INIT_CONFIG ~/.config/magik/conf.json
       return 0
     end
 
