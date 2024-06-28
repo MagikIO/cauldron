@@ -43,10 +43,24 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
         set _config_file $AQUA__NODE_INIT_CONFIG
     end
 
+    # Make sure that node is available here if they are using ASDF
+    if command -q asdf
+      asdf install nodejs latest
+      asdf global nodejs latest
+      asdf local nodejs latest
+      corepack enable
+      asdf reshim nodejs
+    end
+
     # If the user passes a config (JSON) file, read it and set the values
     if set -q _flag_c; or set -q _flag_config
+      # Check if the fays command is avail
+      if command -q f-says
+          f-says "Using the following page from your grimoire (config file): $_config_file"
+      else
         # Style the name of the config file
         printf "Using the following page from your grimoire (config file): %s" $_config_file
+      end
 
         if test -n "$_config_file"
             bat $_config_file --language json
@@ -105,13 +119,36 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
         end
     end
 
+    # We need to know if they prefer to use node-module or pnp for their node-linker
+    # Check if the CAULDRON_NODE_LINKER_PREF env variable is set
+    if set -q CAULDRON_NODE_LINKER_PREF
+        set node_linker_pref $CAULDRON_NODE_LINKER_PREF
+    else
+        # Check if f-says is avail
+        if command -q f-says
+            f-says "Would you like to use the node-modules or pnp mode for your node-modules?"
+        else
+            echo "Would you like to use the node-modules or pnp node-linker?"
+        end
+        choose "node-modules" "pnp"
+
+        # If they choose nothing set it to node-modules
+        if test -z $CAULDRON_LAST_CHOICE
+            set node_linker_pref node-modules
+        else
+            set node_linker_pref $CAULDRON_LAST_CHOICE
+        end
+    end
+
     # First we need to create a a .yarnrc.yml file
     # This file will be used to set up the init values for the project
     # We will add the following to it IF the variable has a value
     #
     # initScope: $scope,
+    # 
     # initFields: {
     #   name: $name,
+    #   node-linker: $node_linker_pref,
     #   description: $description,
     #   author: $author,
     #   license: $license,
@@ -123,6 +160,10 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
             echo "  name: \"$name\"" >>.yarnrc.yml
         end
 
+        if set -q node_linker_pref; and not test -z $node_linker_pref
+            echo "  node-linker: $node_linker_pref" >>.yarnrc.yml
+        end
+
         if set -q description; and not test -z $description
             echo "  description: $description" >>.yarnrc.yml
         end
@@ -132,15 +173,27 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
         end
     end
 
-    # Init Yarn
-    yarn init -2
+
     # Move to newest version
     yarn set version stable
+
+    # Check if asdf is installed
+    if command -q asdf
+        asdf reshim nodejs
+    end
+
+    # Init Yarn
+    yarn init -2
+
     # Add minimum dependencies
-    yarn add -D typescript @types/node eslint @eslint/js typescript typescript-eslint @magik_io/lint_golem
-    # Set up yarn pnp configs for the base project
-    yarn dlx @yarnpkg/sdks base
-    yarn dlx @yarnpkg/sdks vscode
+    yarn add -D typescript @types/node eslint typescript typescript-eslint @magik_io/lint_golem
+    
+    # If they choose to use pnp, we should add in the yarn sdks for them
+    if test $node_linker_pref = "pnp"
+        yarn dlx @yarnpkg/sdks base
+        yarn dlx @yarnpkg/sdks vscode
+    end
+
     # Init Typescript
     tsc --init
 
@@ -234,7 +287,7 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     #  },
     echo "Adding engines to package.json"
     echo "  \"engines\": {" >>package.json
-    set tmp_node_version (nvm current)
+    set tmp_node_version (node -v)
     set tmp_npm_version (npm -v)
     echo "    \"node\": \"$tmp_node_version\"," >>package.json
     echo "    \"npm\": \"$tmp_npm_version\"" >>package.json
@@ -297,6 +350,7 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     echo "eslint.config.*" >>.npmignore
     echo ".editorconfig" >>.npmignore
     echo ".gitattributes" >>.npmignore
+    echo ".yarnrc.yml" >>.npmignore
 
     ##
     #  And then create a eslint.config.js with the following formatting
@@ -312,8 +366,13 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     echo "const tseslint = require('typescript-eslint');" >>eslint.config.js
     echo "const { LintGolem } = require('@magik_io/lint_golem')" >>eslint.config.js
     echo "module.exports = tseslint.config(" >>eslint.config.js
-    echo "  ...new LintGolem({ rootDir: __dirname }).config" >>eslint.config.js
+    echo "  ...new LintGolem({ rootDir: __dirname, tsconfigPaths: 'tsconfig.json' }).config" >>eslint.config.js
     echo ");" >>eslint.config.js
 
-    print_separator "Project initialized"
+    # Check if the f-says command is avail
+    if command -q f-says
+        styled-banner "Project Ready!"
+    else
+      print_separator "Project initialized"
+    end
 end
