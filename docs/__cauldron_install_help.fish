@@ -1,0 +1,54 @@
+#!/usr/bin/env fish
+
+function __cauldron_install_help
+    set -l func_version "1.0.0"
+
+    # Flag options
+    set -l options v/version h/help s/src=
+    argparse -n cauldron_install_help $options -- $argv
+
+    # if they asked the version just return it
+    if set -q _flag_version
+        echo $func_version
+        return 0
+    end
+
+    # if they asked for help, show it
+    if set -q _flag_help
+        echo "Install the Cauldron CLI"
+        echo "Usage: cauldron_install_help [options]"
+        echo ""
+        echo "Options:"
+        echo "  -v, --version  Show the version"
+        echo "  -h, --help     Show this help message"
+        echo "  -s, --src      Install documentation from source"
+        return 0
+    end
+
+    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+
+    # We need to make sure the docs directory exists
+    if not test -d $__CAULDRON_DOCUMENTATION_PATH
+        mkdir -p $__CAULDRON_DOCUMENTATION_PATH
+    end
+
+    # Check if the user wants to install the documentation from source
+    if set -q _flag_src
+        # Make sure that the src passed is a valid directory
+        if not test -d $_flag_src
+            echo "The source directory does not exist"
+            return 1
+        else
+            # Make sure the directory doesn't contain sub-directories
+            # Copy the files to the documentation directory
+            cp -r $_flag_src/* $__CAULDRON_DOCUMENTATION_PATH
+
+            # Check if f-says is installed
+            if type -q f-says
+                f-says "Documentation installed successfully"
+            else
+                echo "Documentation installed successfully"
+            end
+        end
+    end
+end

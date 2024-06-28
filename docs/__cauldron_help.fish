@@ -182,8 +182,10 @@ function __cauldron_help
     complete -c glow -n '__glow_prepare_completions' -f -a '$__glow_comp_results'
   end
 
+  set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+
   # Generate a list of markdown files with their paths
-  set -l mdFiles (find ~/.config/magik/docs -type f -name '*.md')
+  set -l mdFiles (find $__CAULDRON_DOCUMENTATION_PATH -type f -name '*.md')
 
   function extract_file_names
     for path in $argv
