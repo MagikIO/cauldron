@@ -68,22 +68,6 @@ function iterate -d "Move your npm package forward, and post it up"
     end
   end
 
-  # If cliff.toml now exist we should generate changelogs for them
-  if test -f cliff.toml
-    # If they already have a changelog, we need to update it
-    if test -f CHANGELOG.md
-      git cliff -o CHANGELOG.md
-    else
-      git cliff
-    end
-    git cliff -o CHANGELOG.md
-
-    # Now we need to add the changelog to the commit
-    git add CHANGELOG.md
-    git commit -m "chore: update changelog"
-    git push
-  end
-
   # Now we need the current version
   set current_version (jq -r '.version' package.json)
   set current_version_array (string split . $current_version)
@@ -121,6 +105,22 @@ function iterate -d "Move your npm package forward, and post it up"
   #
   # So we just need to get the first word, minus the *
   set main_branch (git branch -l master main | string match -r 'main|master' | string trim)
+
+  # If cliff.toml now exist we should generate changelogs for them
+  if test -f cliff.toml
+    # If they already have a changelog, we need to update it
+    if test -f CHANGELOG.md
+      git cliff -o CHANGELOG.md
+    else
+      git cliff
+    end
+    git cliff -o CHANGELOG.md
+
+    # Now we need to add the changelog to the commit
+    git add CHANGELOG.md
+    git commit -m "chore: update changelog"
+    git push origin $main_branch
+  end
 
   npm version $new_version
   git push origin $main_branch --tags
