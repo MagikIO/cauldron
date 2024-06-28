@@ -8,7 +8,7 @@ function cpfunc -d 'Copy a function to the fish functions directory and source i
     set -l func_version "1.3.5"
     # Flag options
     set -l options v/version h/help d/directory g/global
-    argparse -n installs $options -- $argv
+    argparse -n cpfunc $options -- $argv
 
     # if they asked the version just return it
     if set -q _flag_version
