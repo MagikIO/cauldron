@@ -8,7 +8,7 @@ The [`node_init`](../functions/node_init.fish) create a new Nodejs w/ Typescript
 
 ## Synopsis
 
-```fish
+```shell
 node_init [options]
 ```
 
@@ -32,7 +32,7 @@ The `node_init.fish` function facilitates the setup of a new Node.js project by 
 
 You can create a permanent config file that will be used by default with the following commands:
 
-  ```fish
+  ```shell
 node_init -C
 ```
 
@@ -56,24 +56,24 @@ Upon execution, the function checks for a config file then does the following:
 
 Basic usage
 
-```fish
+```shell
 node_init
 ```
 
 Initializing a new project with basic details:
 
-```fish
+```shell
 node_init --name "MyProject" --description "A new Node.js project"
 ```
 
 Using a configuration file for project setup:
 
-```fish
+```shell
 node_init --config path/to/config.json
 ```
 
 Displaying the version of `node_init`:
 
-```fish
+```shell
 node_init --version
 ```
