@@ -1,3 +1,5 @@
+#!/usr/bin/env fish
+
 function spinner --description 'Show a spinner while a command is running' -a message -a command
     set -l func_version "1.0.0"
 
