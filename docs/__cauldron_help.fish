@@ -185,26 +185,30 @@ function __cauldron_help
         complete -c glow -n __glow_prepare_completions -f -a '$__glow_comp_results'
     end
 
-    # Documentation Category
-    set doc_categories Functions Alias UI Text Internal
-    set __doc_category Functions
-    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
-
     function to_lower_case -a str
         echo $str | tr '[:upper:]' '[:lower:]'
     end
 
     if set -q _flag_category
-        set __doc_category $_flag_category
+        set -gx __doc_category $_flag_category
+    else
+        set -gx __doc_category Functions
     end
 
     function change_category -a index
         # if the index is -1 we move back a category, if it's 1 we move forward
         set -l current_index (math (math --scale 0 (math --scale 0 (string match -r -- '.*\t' $__doc_category) + $index) % (count $doc_categories)))
-        set __doc_category (string join " " $doc_categories[$current_index])
+        set -gx __doc_category (string join " " $doc_categories[$current_index])
         set __lower_case_category (to_lower_case $__doc_category)
-        set __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
+        set -gx __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
     end
+
+    # Documentation Category
+    set doc_categories Functions Alias UI Text Internal
+    set -gx __doc_category Functions
+    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+    set __lower_case_category (to_lower_case $__doc_category)
+    set -gx __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
 
     # terminal width
     set term_width (tput cols)
@@ -217,9 +221,6 @@ function __cauldron_help
         "Cauldron Documentation - $__doc_category" "Press Enter to open the documentation in full-screen" \
         "Press Ctrl-e to edit the documentation, or Ctrl-f to preview with bat" \
         "Change documentation categories with ctrl+n or ctrl+m to cycle the documentation category"
-
-
-
 
     # Generate a list of markdown files with their paths
     set -l mdFiles (find $__CAULDRON_DOC_CATEGORY_PATH -type f -name '*.md')

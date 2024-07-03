@@ -27,7 +27,7 @@ cpfunc "./docs/__cauldron_help.fish"
 cpfunc "./docs/__cauldron_install_help.fish"
 
 # Now lets copy all of our functions and documentation to the $CAULDRON_PATH except the .git folder
-rsync -av --exclude '.git' ./ $CAULDRON_PATH/
+rsync -av --exclude '.git' --exclude node_modules ./ $CAULDRON_PATH/
 
 
 f-says "Cauldron has been updated to the latest version!"
