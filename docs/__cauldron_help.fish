@@ -204,8 +204,7 @@ function __cauldron_help
     end
 
     # Documentation Category
-    set doc_categories Functions Alias UI Text Internal
-    set -gx __doc_category Functions
+    set doc_categories "Functions" "Text" "Setup" "Alias" "UI" "Internal"
     set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
     set __lower_case_category (to_lower_case $__doc_category)
     set -gx __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
