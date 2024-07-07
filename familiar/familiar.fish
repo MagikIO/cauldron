@@ -2,10 +2,10 @@
 
 function familiar -d "Have your familiar speak it's mind" -a msg
   # Cauldron Stats (Version, Category, and Description)
-  set -l func_version "1.0.0"
-  set -l __cauldron_category "Familiar"
+  set func_version "1.0.0"
+  set __cauldron_category "Familiar"
   # Flag options
-  set -l options "v/version" "h/help" "z/cauldron" "t/think" "e/emotion="
+  set options "v/version" "h/help" "z/cauldron" "t/think" "e/emotion="
   argparse -n familiar $options -- $argv
 
   # if they asked the version just return it
@@ -25,6 +25,10 @@ function familiar -d "Have your familiar speak it's mind" -a msg
       echo "  -h, --help     Show this help message"
       echo "  -t, --think    Have your familiar think about the message"
       echo "  -e, --emotion  The emotion of your familiar"
+      echo "  -z, --cauldron Show the category of the function"
+      echo ""
+      echo (bold "Emotions:")
+      echo "  borg, dead, stoned, paranoid, drunk, greedy"
       echo ""
       echo (bold "Usage:")
       echo "familiar [OPTIONS] msg"
@@ -101,31 +105,50 @@ function familiar -d "Have your familiar speak it's mind" -a msg
 
   # Error handling for empty parameters
   if test -z "$msg"
-    set ErrMsg (bold "Error")": A message must be provided for me to speak."
-    if command -q f-says
-        f-says $ErrMsg
-    else 
-      echo $ErrMsg
-    end
+    familiar (bold "Error")": A message must be provided for me to speak."
     return 1
   end
 
 
-  # If the think flag is set, then we need to think about the message
+  # Emotion handling
+  if set -q _flag_emotion
+    set emotion $_flag_emotion
+    if not contains $emotion "borg" "dead" "stoned" "paranoid" "drunk" "greedy"
+      familiar (bold "Error")": The emotion provided is not valid. Please choose from: borg, dead, stoned, paranoid, drunk, greedy"
+      return 1
+    end
+
+    set flagToUse = ""
+    switch $emotion
+      case "borg"
+        set flagToUse "-b"
+      case "dead"
+        set flagToUse "-d"
+      case "stoned"
+        set flagToUse "-s"
+      case "paranoid"
+        set flagToUse "-p"
+      case "drunk"
+        set flagToUse "-w"
+      case "greedy"
+        set flagToUse "-g"
+    end
+
+    if set -q _flag_think
+      echo $msg | f-thinks $flagToUse -n
+      return 0
+    else
+      echo $msg | f-says $flagToUse -n
+      return 0
+    end
+  end
+
   if set -q _flag_think
-    # If they provided an emotion, we should use that
-    if set -q _flag_emotion
-      f-thinks -e $_flag_emotion $msg
-    else
-      f-thinks $msg
-    end
+    echo $msg | f-thinks -n
+    return 0
   else
-    # IF they provided an emotion, we should use that
-    if set -q _flag_emotion
-      f-says -e $_flag_emotion $msg
-    else
-      f-says $msg
-    end
+    echo $msg | f-says -n
+    return 0
   end
 
   return 0
