@@ -1,0 +1,58 @@
+# Trogdor (Homestar Runner, Strongbad Emails)
+# by Charc0al (original art)
+# Generated with Charc0al's cowsay file converter http://charc0al.github.io/cowsay-files/converter
+
+$x = "\e[49m  ";          #reset color
+$t = "$thoughts ";
+$a = "\e[48;5;53m  ";
+$b = "\e[48;5;92m  ";
+$c = "\e[48;5;239m  ";
+$d = "\e[48;5;135m  ";
+$e = "\e[48;5;22m  ";
+$f = "\e[48;5;34m  ";
+$g = "\e[48;5;120m  ";
+$h = "\e[48;5;28m  ";
+$i = "\e[48;5;236m  ";
+$j = "\e[48;5;248m  ";
+$k = "\e[48;5;94m  ";
+$l = "\e[48;5;223m  ";
+$m = "\e[48;5;215m  ";
+
+$the_cow = <<EOC
+                  $t
+                    $t
+                      $t
+                        $t
+              $a$x        $t    $a$x
+          $a  $b$a$x            $a  $x        $i$x    $i$x
+        $a$d  $b$a$x            $a$b$a  $x      $i$x$i$x
+      $a$d  $b$d$b$a$x        $a$b  $d  $a$x      $i$x
+      $a  $d      $b$a$x      $a$b$d$b$a$x    $c$x  $c$x
+          $a$d    $b$a  $x  $e              $x              $f    $x
+          $a    $b$d  $b$e  $f                                $g$f$x
+                $a$d$a$e      $f                                  $x
+                $a  $x$e$f        $h    $f                      $x
+                      $e$f      $h$e      $f      $x$j$x$j$x$j$x
+              $k      $e$f      $e$x      $e$f      $x$j$x$j$x
+          $k  $l    $m$e$f      $e$x        $e  $f          $x
+        $k$l          $e$h$f  $h$e$x            $e$f        $x
+        $k$l  $m$l    $m$e$f$h$f$h$e$x            $e      $x
+        $k  $l$k$m    $e  $h$f$h$f$h$e  $x
+        $k$l$m$k      $x$e$f$h$f$h$f$h$f$e  $x
+        $k$l$k$x          $e$f$h$f$h$f      $e$x
+        $k$l  $k$x          $e  $f          $h$e$x
+        $k$m$l$k$x              $e    $f      $h$e$x
+          $k    $x                    $e$f    $h$e$x
+                  $e$x                  $e$f  $h$e$x
+                  $e  $x$e$x    $e$x    $e$f  $h$e$x
+                  $e$h$x$e  $x  $e  $x$e$f  $h$e$x
+              $e          $h$e$x$e$h$e$f    $h$e$x
+                $e  $h$f$e          $f    $h$e$x
+                    $e  $h  $f          $h$e$x
+                        $e      $h      $e$x
+                              $e        $x
+                              $i$x    $i$x
+                              $i$x    $i$x
+                              $i$x    $i    $x
+                              $i    $x
+EOC
