@@ -1,5 +1,7 @@
 # `peek-at-fish`
 
+## Overview
+
 [`peek-at-fish`](../../functions/peek-at-fish.fish) enhances your Fish shell experience by allowing you to quickly preview and edit Fish functions. It utilizes `fzf` for fuzzy finding and `bat` for syntax-highlighted previews, providing an efficient way to navigate through your functions.
 
 ## Synopsis
