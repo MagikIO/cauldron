@@ -25,15 +25,22 @@ function __cauldron_install_help
         return 0
     end
 
-    # Documentation Category
-    set doc_categories "Functions" "Alias" "UI" "Text" "Internal"
-    set __doc_category "Functions"
-
-    if set -q _flag_category
-      set __doc_category $_flag_category
+    function to_lower_case -a str
+      echo $str | tr '[:upper:]' '[:lower:]'
     end
 
-    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs/$__doc_category
+    if set -q _flag_category
+      set -gx __doc_category $_flag_category
+    else
+      set -gx __doc_category Functions
+    end
+
+    # Documentation Category
+    set doc_categories "Functions" "Text" "Setup" "Alias" "UI" "Internal"
+
+    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+    set __lower_case_category (to_lower_case $__doc_category)
+    set -gx __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
 
     # We need to make sure the docs directory exists
     if not test -d $__CAULDRON_DOCUMENTATION_PATH
@@ -44,7 +51,7 @@ function __cauldron_install_help
     if set -q _flag_src
         # Make sure that the src passed is a valid directory
         if not test -d $_flag_src
-            echo "The source directory does not exist"
+            familiar "The source directory does not exist"
             return 1
         else
             # Make sure the directory doesn't contain sub-directories
@@ -52,11 +59,13 @@ function __cauldron_install_help
             cp -r $_flag_src/* $__CAULDRON_DOCUMENTATION_PATH
 
             # Check if f-says is installed
-            if type -q f-says
-                f-says "Documentation installed successfully"
-            else
-                echo "Documentation installed successfully"
-            end
+            familiar "Documentation installed successfully"
         end
+    else
+        # We need to grab the documentation files from git
+      set base_doc_url "https://github.com/MagikIO/cauldron/tree/main/docs/"
+      set doc_url "$base_doc_url$__lower_case_category"
+      
+
     end
 end
