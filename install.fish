@@ -11,7 +11,7 @@ if not set -q __CAULDRON_DOCUMENTATION_PATH
 end
 
 # List of folders with functions
-set CAULDRON_LOCAL_DIRS alias cli config effects familiar internal packages setup text UI
+set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "familiar" "internal" "setup" "text" "UI"
 
 # First we need to make sure we have cpfunc installed
 if not functions -q cpfunc
@@ -32,6 +32,13 @@ for dir in $CAULDRON_LOCAL_DIRS
     cp -r ./$dir $CAULDRON_PATH/$dir
     cpfunc ./$dir -d
 end
+
+# Install the one off scripts that are not part of the main CLI
+cpfunc ./packages/asdf -d
+cpfunc ./packages/nvm -d
+cpfunc ./packages/choose_packman.fish
+
+cp -r ./packages $CAULDRON_PATH/packages
 
 # Now we recursively copy the data, docs, node, and setup directories
 cp -r ./data $CAULDRON_PATH/data
