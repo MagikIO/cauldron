@@ -10,7 +10,7 @@ function choose_packman -d 'Choose the package manager you want to use'
   # if they asked the version just return it
   if set -q _flag_version
       echo $func_version
-      return
+      exit 0
   end
 
   # if they asked for help just return it
@@ -23,7 +23,7 @@ function choose_packman -d 'Choose the package manager you want to use'
       echo "  -v, --version  Show the version number"
       echo "  -h, --help     Show this help message"
       echo "  -s, --silent   Only prompt the user if we absolutely can not determine their preferred package manager"
-      return
+      exit 0
   end
 
   if not set $cauldron_packman_pref

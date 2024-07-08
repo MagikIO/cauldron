@@ -34,7 +34,7 @@ export default class Cauldron {
 
   static async init(debug = false) {
     try {
-      const db = await DatabaseManager.init('./setup/cauldron.db', debug);
+      const db = await DatabaseManager.init('./data/cauldron.db', debug);
       if (!db) { throw new Error('Database not initialized') }
       const cauldron = new Cauldron({ db, debug });
       return cauldron;
