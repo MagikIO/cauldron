@@ -29,6 +29,10 @@ function __cauldron_install_help
       echo $str | tr '[:upper:]' '[:lower:]'
     end
 
+    if not set -q __CAULDRON_DOCUMENTATION_PATH
+      set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+    end
+
     if set -q _flag_category
       set -gx __doc_category $_flag_category
     else
@@ -37,8 +41,6 @@ function __cauldron_install_help
 
     # Documentation Category
     set doc_categories "Functions" "Text" "Setup" "Alias" "UI" "Internal"
-
-    set -gx __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
     set __lower_case_category (to_lower_case $__doc_category)
     set -gx __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
 
