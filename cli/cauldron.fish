@@ -2,28 +2,52 @@
 
 function cauldron
   set -l func_version "1.0.0"
+  set -l cauldron_category "CLI"
+  if not set -q CAULDRON_PATH
+    set -Ux CAULDRON_PATH $HOME/.config/cauldron
+  end
+  if not set -q __CAULDRON_DOCUMENTATION_PATH
+    set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+  end
+  if not set -q CAULDRON_GIT_REPO
+    set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
+  end
     
   # Define options that can be passed
-  set -l options "v/version" "h/help" "D/new-docs="
+  set -l options "v/version" "h/help" "D/new-docs=" "z/cauldron" "u/update"
   argparse -n cauldron $options -- $argv
 
   # If the user passes the -v or --version flag, print the version number
   if set -q _flag_v; or set -q _flag_version
     echo "v$func_version"
-    return
+    exit 0
+  end
+
+  # If they asked for the category return it
+  if set -q _flag_z; or set -q _flag_cauldron
+    echo $cauldron_category
+    exit 0
   end
 
   # If the user passes the -h or --help flag, run __cauldron_help
   if set -q _flag_h; or set -q _flag_help
     __cauldron_help
-    return
+    exit 0
   end
 
   # If the user passes the -D or --new-docs flag, run __cauldron_install_help
   if set -q _flag_D; or set -q _flag_new-docs
     __cauldron_install_help --src $_flag_D
-    return
+    exit 0
   end
+
+  # If the user passes the -u or --update flag, run __cauldron_update
+  if set -q _flag_u; or set -q _flag_update
+    ./$CAULDRON_PATH/update.fish
+    exit 0
+  end
+
+
 
   # If the user passes no flags, run the main function
   f-says "Welcome to Cauldron!"
