@@ -13,6 +13,9 @@ end
 # List of folders with functions
 set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "familiar" "internal" "setup" "text" "UI"
 
+# Get sudo so we can update
+sudo -v
+
 # First we need to make sure we have cpfunc installed
 if not functions -q cpfunc
   cp ./functions/cpfunc.fish ~/.config/fish/functions/cpfunc.fish

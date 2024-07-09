@@ -10,6 +10,9 @@ if not set -q CAULDRON_GIT_REPO
   set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
 end
 
+# Get sudo so we can update
+sudo -v
+
 # First we need to make sure our destination folder exists
 if not test -d $CAULDRON_PATH
   mkdir -p $CAULDRON_PATH
