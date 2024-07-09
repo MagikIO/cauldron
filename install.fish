@@ -50,6 +50,9 @@ set -Ux CAULDRON_PALETTES $CAULDRON_PATH/data/palettes.json
 set -Ux CAULDRON_SPINNERS $CAULDRON_PATH/data/spinners.json
 set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
 
+# Now we move over the update script 
+cp ./update.fish $CAULDRON_PATH/update.fish
+
 # Create the log files
 if not test -f $CAULDRON_PATH/logs/cauldron.log
     touch $CAULDRON_PATH/logs/cauldron.log
