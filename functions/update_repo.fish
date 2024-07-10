@@ -25,6 +25,9 @@ function update_repo
         return
     end
 
+    # Get sudo so we can update
+    sudo -v
+
     # This script is designed to be run whenever VScode is opened
     # Check if aquarium is installed
     install_aquarium
@@ -39,13 +42,15 @@ function update_repo
             install_asdf
         end
         # Then we need to set the node version
-        asdf_update_node
+        gum spin --spinner moon --title "Updating Node..." -- fish -c asdf_update_node
+        gum spin --spinner moon --title "Updating Ruby..." -- fish -c asdf_update_ruby
+        gum spin --spinner moon --title "Updating Go..." -- fish -c asdf_update_go
     end
 
     # If they prefer nvm
     if test $cauldron_packman_pref = nvm
         # We need to set the node version
-        nvm_update_node
+        gum spin --spinner moon --title "Updating Node..." -- fish -c nvm_update_node
     end
 
     print_separator "⬆️ Updating Branch ⬆️"
@@ -59,14 +64,14 @@ function update_repo
     git gone
 
     print_separator "🆙 Updating your system 🆙"
-    sudo apt -y update && sudo apt -y upgrade && sudo apt -y autoclean
+    gum spin --spinner moon --title "Updating System..." -- fish -c "sudo apt -y update && sudo apt -y upgrade && sudo apt -y autoclean"
 
     # Update Homebrew
     print_separator "⚗️ Updating Homebrew ⚗️"
     brew update && brew upgrade && brew cleanup && brew doctor
 
     print_separator "🧶 Rolling up most recent ball of yarn 🧶"
-    yarn && yarn up
+    gum spin --spinner moon --title "Updating node_modules..." -- fish -c "yarn && yarn up"
 
     print_separator "🧶 Upgrading dependencies 🧶"
     yarn upgrade-interactive
