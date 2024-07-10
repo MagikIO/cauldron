@@ -17,10 +17,10 @@
   },
   "devDependencies": {
     "@magik_io/lint_golem": "^2.2.1",
-    "@types/node": "^20.14.9",
-    "eslint": "^9.5.0",
-    "typescript": "^5.5.2",
-    "typescript-eslint": "^7.14.1"
+    "@types/node": "^20.14.10",
+    "eslint": "^9.6.0",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^7.16.0"
   },
   "authors": [
     {
