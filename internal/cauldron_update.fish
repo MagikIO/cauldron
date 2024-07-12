@@ -83,7 +83,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     mkdir -p $tmp_dir/data
 
     # Copy the data folder to the temp folder
-    cp -r $CAULDRON_PATH/data $tmp_dir
+    cp -r $CAULDRON_PATH/data/* $tmp_dir/
   end
 
   # Now we remove everything in the base folder so we can clone the latest version
@@ -91,12 +91,12 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   mkdir -p $CAULDRON_PATH
 
   # Now we clone the latest version of the repo
-  git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
+  gum spin --spinner moon --title "Adding new ingredients to your cauldron..." -- fish -c "git clone $CAULDRON_GIT_REPO $CAULDRON_PATH"
 
   # Now we copy the data folder back
   if test -d $tmp_dir
     # Copy the data folder back
-    cp -r $tmp_dir/ $CAULDRON_PATH/data
+    cp -r $tmp_dir/* $CAULDRON_PATH/data/
   end
 
   # Now we remove the temp folder
