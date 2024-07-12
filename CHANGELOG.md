@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2024-07-12
+
+### 🚜 Refactor
+
+- Improve directory creation and copying logic in cauldron_update.fish
+- Move init_cauldron_DB.fish to tools directory and rename to __init_cauldron_DB.fish
+- Bump version to 0.3.0 in package.json
+
 ## [0.2.1] - 2024-07-12
 
 ### 🐛 Bug Fixes
