@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2024-07-12
+
+### 🚀 Features
+
+- Update Cauldron to the latest version and improve installation process
+- Update Cauldron to the latest version and improve installation process
+- Add new function to update Git alias definition
+- Add Yoda, Woodstock, Vault-Boy, and Wheatley cow files
+- Add asdf_update_go and asdf_update_ruby scripts
+- Add initial database schema and sample data
+- Add function to initialize the database
+- Add init_DB function to initialize the database
+- Update cauldron CLI version to 1.1.0
+
+### 🚜 Refactor
+
+- Rename init_DB function to init_cauldron_DB
+- Remove unnecessary code in test.fish
+
+### 📚 Documentation
+
+- Adds documentation for `bold` and `italic` fn
+- Minor change to the formatting of `peet-at-fish` documentation
+- Add `update_git_alias` documentation
+
+### ⚙️ Miscellaneous Tasks
+
+- Add familiar function to speak and think messages
+- Update CAULDRON_LOCAL_DIRS in install.fish
+- Refactor install.fish to use INSERT OR REPLACE for updating dependencies table
+- Refactor cauldron.fish to add new options and update dependencies
+- Update .gitignore to include excluded files and directories
+- Update Node.js and TypeScript dependencies
+- Update asdf_update_go and asdf_update_ruby scripts
+- Update choose_packman.fish to version 1.0.1
+- Update .gitignore to include excluded files and directories
+- Update npm dependency to latest stable version
+- Update npm dependency to latest stable version
+- Update npm dependency to latest stable version
+- Update npm dependency to version 0.2.0
+
 ## [unreleased]
 
 ### 🚀 Features
