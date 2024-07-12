@@ -76,7 +76,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
 
   # Now we remove everything in the base folder so we can clone the latest version
-  rm -rf $CAULDRON_PATH/*
+  rm -rf $CAULDRON_PATH/
+  mkdir -p $CAULDRON_PATH
 
   # Now we clone the latest version of the repo
   git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
