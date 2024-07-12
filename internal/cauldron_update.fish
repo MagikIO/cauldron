@@ -1,11 +1,17 @@
 #!/usr/bin/env fish
 
 function cauldron_update
+  set script_dir (dirname (status --current-filename))
+
   # First we need to make sure the DB exists and the var is set
   if not test -f $CAULDRON_DATABASE
-    # We need to just exit and tell them to run the install script
-    familiar "You need to run the install script first! \nRun ./~/.config/cauldron/install.fish"
-    return 1;
+    # If init_cauldron_DB is not defined we need to cpfunc it
+    if not functions -q init_cauldron_DB
+      cpfunc $script_dir/internal/init_cauldron_DB.fish
+    end
+
+    # Now we init the cauldron DB
+    init_cauldron_DB
   end
 
   # Check their database to see what version they are on
@@ -73,13 +79,13 @@ function cauldron_update
 
   # First we need to make sure we have cpfunc installed
   if not functions -q cpfunc
-    cp ./functions/cpfunc.fish ~/.config/fish/functions/cpfunc.fish
+    cp $script_dir/functions/cpfunc.fish ~/.config/fish/functions/cpfunc.fish
     chmod +x ~/.config/fish/functions/cpfunc.fish
     source ~/.config/fish/functions/cpfunc.fish
   end
 
   # We have to patch their version of `installs` with our version
-  cpfunc ./functions/ -d
+  cpfunc $script_dir/functions/ -d
 
   # Copy and source all the needed functions
   for dir in $CAULDRON_LOCAL_DIRS
@@ -87,29 +93,26 @@ function cauldron_update
         mkdir -p $CAULDRON_PATH/$dir
     end
 
-    cp -r ./$dir $CAULDRON_PATH/$dir
-    cpfunc ./$dir -d
+    cp -r $script_dir/$dir $CAULDRON_PATH/$dir
+    cpfunc $script_dir/$dir -d
   end
 
   # Install the one off scripts that are not part of the main CLI
-  cpfunc ./packages/asdf -d
-  cpfunc ./packages/nvm -d
-  cpfunc ./packages/choose_packman.fish
+  cpfunc $script_dir/packages/asdf -d
+  cpfunc $script_dir/packages/nvm -d
+  cpfunc $script_dir/packages/choose_packman.fish
 
-  cp -r ./packages $CAULDRON_PATH/packages
+  cp -r $script_dir/packages $CAULDRON_PATH/packages
 
   # Now we recursively copy the data, docs, node, and setup directories
-  cp -r ./data $CAULDRON_PATH/data
-  cp -r ./docs $CAULDRON_PATH/docs
-  cp -r ./node $CAULDRON_PATH/node
+  cp -r $script_dir/data $CAULDRON_PATH/data
+  cp -r $script_dir/docs $CAULDRON_PATH/docs
+  cp -r $script_dir/node $CAULDRON_PATH/node
 
   # We need to create a few variables to make things easier later
   set -Ux CAULDRON_PALETTES $CAULDRON_PATH/data/palettes.json
   set -Ux CAULDRON_SPINNERS $CAULDRON_PATH/data/spinners.json
   set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
-
-  # Now we move over the update script 
-  cp ./update.fish $CAULDRON_PATH/update.fish
 
   # Create the log files
   if not test -f $CAULDRON_PATH/logs/cauldron.log
@@ -145,12 +148,6 @@ function cauldron_update
   set brew_dependencies (cat ./dependencies.json | jq -r '.brew[]')
   set snap_dependencies (cat ./dependencies.json | jq -r '.snap[]')
 
-  # SQL command to create the 'dependencies' table if it doesn't exist
-  set CREATE_TABLE_SQL "CREATE TABLE IF NOT EXISTS dependencies (id INTEGER PRIMARY KEY, name TEXT UNIQUE, version TEXT, date TEXT);"
-
-  # Execute the CREATE TABLE command
-  sqlite3 $CAULDRON_DATABASE $CREATE_TABLE_SQL
-
   for dep in $apt_dependencies
     gum spin --spinner moon --title "Installing $dep..." -- fish -c "if not command -q \$dep; sudo apt install \$dep -y; end; if not command -q \$dep; set ERROR_MSG \"Failed to install: \$dep using the command 'sudo apt install \$dep -y'\"; echo \$ERROR_MSG >> \$CAULDRON_PATH/logs/cauldron.log; else; set VERSION (apt show \$dep | grep \"Version\" | cut -d \":\" -f 2 | tr -d \" \"); set DATE (date); sqlite3 \$CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"; end"
   end
@@ -162,6 +159,15 @@ function cauldron_update
   for dep in $snap_dependencies
     gum spin --spinner moon --title "Installing $dep..." -- fish -c "if not command -q \$dep; sudo snap install \$dep; end; if not command -q \$dep; set ERROR_MSG \"Failed to install: \$dep using the command 'sudo snap install \$dep'\"; echo \$ERROR_MSG >> \$CAULDRON_PATH/logs/cauldron.log; else; set VERSION (snap info \$dep | grep \"installed\" | cut -d \":\" -f 2 | tr -d \" \"); set DATE (date); sqlite3 \$CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$$dep', '\$VERSION', '\$DATE');\"; end"
   end
+
+
+  # Now we need to make sure the DB is up to date
+  if test -f $CAULDRON_PATH/data/update.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql
+  end
+
+  # Now we need to update the DB's version
+  sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$LATEST_VERSION')"
 
   styled-banner "Updated!"
 end

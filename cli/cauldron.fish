@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function cauldron
-  set -l func_version "1.0.0"
+  set -l func_version "1.1.0"
   set -l cauldron_category "CLI"
   if not set -q CAULDRON_PATH
     set -Ux CAULDRON_PATH $HOME/.config/cauldron
@@ -9,9 +9,7 @@ function cauldron
   if not set -q __CAULDRON_DOCUMENTATION_PATH
     set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
   end
-  if not set -q CAULDRON_GIT_REPO
-    set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
-  end
+  set script_dir (dirname (status --current-filename))
     
   # Define options that can be passed
   set -l options "v/version" "h/help" "D/new-docs=" "z/cauldron" "u/update"
@@ -43,12 +41,10 @@ function cauldron
 
   # If the user passes the -u or --update flag, run __cauldron_update
   if set -q _flag_u; or set -q _flag_update
-    ./$CAULDRON_PATH/update.fish
+    cauldron_update
     exit 0
   end
 
-
-
   # If the user passes no flags, run the main function
-  f-says "Welcome to Cauldron!"
+  familiar "Welcome to Cauldron!"
 end
