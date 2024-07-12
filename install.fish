@@ -84,6 +84,7 @@ cp $script_dir/dependencies.json $CAULDRON_PATH/dependencies.json
 
 fish -c "$CAULDRON_INTERNAL_TOOLS/__install_essential_tools.fish"
 
+
 styled-banner "Installed!"
 
 return 0

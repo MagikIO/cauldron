@@ -11,20 +11,20 @@ CREATE TABLE "dependencies" (
 CREATE TABLE "familiars" (
 	"id"	integer,
 	"name"	TEXT NOT NULL UNIQUE COLLATE RTRIM,
-	"familiar_type"	TEXT NOT NULL COLLATE RTRIM,
 	"display_name"	TEXT COLLATE RTRIM,
+	"familiar_type"	TEXT NOT NULL COLLATE RTRIM,
+	"unlocked"	INTEGER NOT NULL DEFAULT 0,
+	"cow_src_ext"	INTEGER DEFAULT 0,
+	"nickname"	TEXT COLLATE NOCASE,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
-CREATE TABLE "unlocked" (
-	"id"	INTEGER NOT NULL,
-	"name"	text,
-	"selected"	boolean DEFAULT 0,
-	FOREIGN KEY("id") REFERENCES "familiars"("id")
-);
 
-INSERT INTO "familiars" ("id", "name", "familiar_type", "display_name") VALUES ('1', 'koala', 'Woodland-Cute', NULL);
-INSERT INTO "familiars" ("id", "name", "familiar_type", "display_name") VALUES ('2', 'hellokitty', 'Mascot-Cute', 'Hello Kitty');
-INSERT INTO "familiars" ("id", "name", "familiar_type", "display_name") VALUES ('3', 'suse', 'Jungle-Cute', NULL);
-INSERT INTO "familiars" ("id", "name", "familiar_type", "display_name") VALUES ('4', 'tux', 'Artic-Cute', NULL);
-INSERT INTO "familiars" ("id", "name", "familiar_type", "display_name") VALUES ('5', 'cock', 'Farm', 'Rooster');
-INSERT INTO "familiars" ("id", "name", "familiar_type", "display_name") VALUES ('6', 'duck', 'Farm-Urban-Cute', NULL);
+CREATE VIEW "unlocked_familiars" AS SELECT * FROM familiars WHERE unlocked = 1;
+
+INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('1', 'koala', NULL, 'Woodland-Cute', '1', NULL, NULL);
+INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('2', 'hellokitty', 'Hello Kitty', 'Mascot-Cute', '1', NULL, NULL);
+INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('3', 'suse', NULL, 'Jungle-Cute', '1', NULL, NULL);
+INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('4', 'tux', NULL, 'Artic-Cute', '1', NULL, NULL);
+INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('5', 'cock', 'Rooster', 'Farm', '1', NULL, NULL);
+INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('6', 'duck', NULL, 'Farm-Urban-Cute', '1', NULL, NULL);
+INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('7', 'trogdor', NULL, 'Meme', '1', '1', NULL);
