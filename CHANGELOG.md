@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2024-07-12
+
+### 🚜 Refactor
+
+- Update cauldron_update.fish to improve directory creation and copying logic
+- Improve directory creation and copying logic in cauldron_update.fish
+- Improve directory creation and copying logic in cauldron_update.fish
+- Update cauldron_update.fish to improve directory creation and copying logic
+- Improve directory creation and copying logic in cauldron_update.fish
+- Improve directory creation and copying logic in cauldron_update.fish
+- Improve directory creation and copying logic in cauldron_update.fish
+
+### ⚙️ Miscellaneous Tasks
+
+- Update npm dependency to latest stable version
+- Update npm dependency to latest stable version
+
 ## [0.2.0] - 2024-07-12
 
 ### 🚀 Features
