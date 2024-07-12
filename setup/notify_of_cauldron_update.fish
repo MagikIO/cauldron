@@ -1,4 +1,4 @@
-function update_cauldron
+function notify_of_cauldron_update
     # Check if ~/.config/cauldron/latestRelease.json exists
     if test -f ~/.config/cauldron/latestRelease.json
         # Now we use the getLatestGithubReleaseAsJSON function to get the latest release to compare against

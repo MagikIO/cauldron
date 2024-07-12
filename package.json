@@ -8,7 +8,7 @@
   },
   "scripts": {
     "run": "tsx node/index.ts",
-    "changelog": "git cliff --unreleased --tag 0.2.0 --prepend CHANGELOG.md"
+    "changelog": "git cliff --unreleased --tag --prepend CHANGELOG.md"
   },
   "dependencies": {
     "consola": "^3.2.3",
