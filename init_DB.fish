@@ -15,6 +15,3 @@ function init_DB
     sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql
   end
 end
-
-
-
