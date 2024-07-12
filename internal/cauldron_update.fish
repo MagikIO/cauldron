@@ -37,25 +37,38 @@ function cauldron_update
     return 0;
   end
 
+  # Path must exist for us to use
   if not set -q CAULDRON_PATH
     set -Ux CAULDRON_PATH $HOME/.config/cauldron
+
+    if not test -d $CAULDRON_PATH
+      mkdir -p $CAULDRON_PATH
+    end
   end
+
+  # Make sure the documentation path is set
   if not set -q __CAULDRON_DOCUMENTATION_PATH
     set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+
+    # Make sure it exists
+    if not test -d $__CAULDRON_DOCUMENTATION_PATH
+      mkdir -p $__CAULDRON_DOCUMENTATION_PATH
+    end
   end
+
   if not set -q CAULDRON_GIT_REPO
     set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
   end
 
-  # First we need to make sure our destination folder exists
-  if not test -d $CAULDRON_PATH
-    mkdir -p $CAULDRON_PATH
-  end
-
+  # First we need to create a temporary directory to back up their data folder
   set tmp_dir (mktemp -d)
 
   # Next we need to backup their data folder by copying it to a temp folder
   if test -d $CAULDRON_PATH/data
+    # Make sure the temp folder exists
+    mkdir -p $tmp_dir/data
+
+    # Copy the data folder to the temp folder
     mv $CAULDRON_PATH/data $tmp_dir/data
   end
 
@@ -67,6 +80,9 @@ function cauldron_update
 
   # Now we copy the data folder back
   if test -d $tmp_dir/data
+    # Make sure the data folder exists
+    mkdir -p $CAULDRON_PATH/data
+
     mv $tmp_dir/data $CAULDRON_PATH/data
   end
 
@@ -74,18 +90,7 @@ function cauldron_update
   rm -rf $tmp_dir
 
   # List of folders with functions
-  set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "familiar" "internal" "setup" "text" "UI"
-
-
-  # First we need to make sure we have cpfunc installed
-  if not functions -q cpfunc
-    cp $script_dir/functions/cpfunc.fish ~/.config/fish/functions/cpfunc.fish
-    chmod +x ~/.config/fish/functions/cpfunc.fish
-    source ~/.config/fish/functions/cpfunc.fish
-  end
-
-  # We have to patch their version of `installs` with our version
-  cpfunc $script_dir/functions/ -d
+  set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI"
 
   # Copy and source all the needed functions
   for dir in $CAULDRON_LOCAL_DIRS
@@ -94,19 +99,20 @@ function cauldron_update
     end
 
     cp -r $script_dir/$dir $CAULDRON_PATH/$dir
-    cpfunc $script_dir/$dir -d
+    cpfunc $CAULDRON_PATH/$dir -d
   end
 
   # Install the one off scripts that are not part of the main CLI
-  cpfunc $script_dir/packages/asdf -d
-  cpfunc $script_dir/packages/nvm -d
-  cpfunc $script_dir/packages/choose_packman.fish
-
+  mkdir -p $CAULDRON_PATH/packages
   cp -r $script_dir/packages $CAULDRON_PATH/packages
+  cpfunc $CAULDRON_PATH/packages/asdf -d
+  cpfunc $CAULDRON_PATH/packages/nvm -d
+  cpfunc $CAULDRON_PATH/packages/choose_packman.fish
 
-  # Now we recursively copy the data, docs, node, and setup directories
-  cp -r $script_dir/data $CAULDRON_PATH/data
+  # Now we recursively copy the essential doc pieces
+  mkdir -p $CAULDRON_PATH/docs
   cp -r $script_dir/docs $CAULDRON_PATH/docs
+  mkdir -p $CAULDRON_PATH/node
   cp -r $script_dir/node $CAULDRON_PATH/node
 
   # We need to create a few variables to make things easier later
@@ -116,6 +122,7 @@ function cauldron_update
 
   # Create the log files
   if not test -f $CAULDRON_PATH/logs/cauldron.log
+    mkdir -p $CAULDRON_PATH/logs
     touch $CAULDRON_PATH/logs/cauldron.log
   end
 
@@ -144,9 +151,9 @@ function cauldron_update
   end
 
   # Now we need to install the dependencies from the ./dependencies.json file
-  set apt_dependencies (cat ./dependencies.json | jq -r '.apt[]')
-  set brew_dependencies (cat ./dependencies.json | jq -r '.brew[]')
-  set snap_dependencies (cat ./dependencies.json | jq -r '.snap[]')
+  set apt_dependencies (cat $script_dir/dependencies.json | jq -r '.apt[]')
+  set brew_dependencies (cat $script_dir/dependencies.json | jq -r '.brew[]')
+  set snap_dependencies (cat $script_dir/dependencies.json | jq -r '.snap[]')
 
   for dep in $apt_dependencies
     gum spin --spinner moon --title "Installing $dep..." -- fish -c "if not command -q \$dep; sudo apt install \$dep -y; end; if not command -q \$dep; set ERROR_MSG \"Failed to install: \$dep using the command 'sudo apt install \$dep -y'\"; echo \$ERROR_MSG >> \$CAULDRON_PATH/logs/cauldron.log; else; set VERSION (apt show \$dep | grep \"Version\" | cut -d \":\" -f 2 | tr -d \" \"); set DATE (date); sqlite3 \$CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"; end"
@@ -159,7 +166,6 @@ function cauldron_update
   for dep in $snap_dependencies
     gum spin --spinner moon --title "Installing $dep..." -- fish -c "if not command -q \$dep; sudo snap install \$dep; end; if not command -q \$dep; set ERROR_MSG \"Failed to install: \$dep using the command 'sudo snap install \$dep'\"; echo \$ERROR_MSG >> \$CAULDRON_PATH/logs/cauldron.log; else; set VERSION (snap info \$dep | grep \"installed\" | cut -d \":\" -f 2 | tr -d \" \"); set DATE (date); sqlite3 \$CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$$dep', '\$VERSION', '\$DATE');\"; end"
   end
-
 
   # Now we need to make sure the DB is up to date
   if test -f $CAULDRON_PATH/data/update.sql
