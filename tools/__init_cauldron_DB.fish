@@ -1,4 +1,4 @@
-function init_cauldron_DB
+function __init_cauldron_DB
   # First we need to make sure the DB exists and the var is set
   if not set -q CAULDRON_DATABASE
     set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
