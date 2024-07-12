@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2024-07-12
+
+### 🚜 Refactor
+
+- Improve directory creation and copying logic in cauldron_update.fish
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to 0.3.1 and update changelog script
+
 ## [0.3.0] - 2024-07-12
 
 ### 🚜 Refactor
