@@ -86,9 +86,9 @@ if not command -q gum
 end
 
 # Now we need to install the dependencies from the ./dependencies.json file
-set apt_dependencies (cat ./dependencies.json | jq -r '.apt[]')
-set brew_dependencies (cat ./dependencies.json | jq -r '.brew[]')
-set snap_dependencies (cat ./dependencies.json | jq -r '.snap[]')
+set apt_dependencies (cat $script_dir/dependencies.json | jq -r '.apt[]')
+set brew_dependencies (cat $script_dir/dependencies.json | jq -r '.brew[]')
+set snap_dependencies (cat $script_dir/dependencies.json | jq -r '.snap[]')
 
 for dep in $apt_dependencies
   gum spin --spinner moon --title "Installing $dep..." -- fish -c "if not command -q \$dep; sudo apt install \$dep -y; end; if not command -q \$dep; set ERROR_MSG \"Failed to install: \$dep using the command 'sudo apt install \$dep -y'\"; echo \$ERROR_MSG >> \$CAULDRON_PATH/logs/cauldron.log; else; set VERSION (apt show \$dep | grep \"Version\" | cut -d \":\" -f 2 | tr -d \" \"); set DATE (date); sqlite3 \$CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"; end"

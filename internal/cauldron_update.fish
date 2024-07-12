@@ -14,6 +14,17 @@ function cauldron_update
     init_cauldron_DB
   end
 
+  # Copy over the schema file
+  cp $script_dir/data/schema.sql $CAULDRON_PATH/data/schema.sql
+
+  # Invoke the schema just in case it is not there
+  sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql
+
+  # Now we need to make sure the DB is up to date
+  if test -f $CAULDRON_PATH/data/update.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql
+  end
+
   # Check their database to see what version they are on
   # CREATE TABLE "cauldron" ("version"	TEXT NOT NULL COLLATE RTRIM, PRIMARY KEY("version"));
   set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron")
@@ -165,11 +176,6 @@ function cauldron_update
 
   for dep in $snap_dependencies
     gum spin --spinner moon --title "Installing $dep..." -- fish -c "if not command -q \$dep; sudo snap install \$dep; end; if not command -q \$dep; set ERROR_MSG \"Failed to install: \$dep using the command 'sudo snap install \$dep'\"; echo \$ERROR_MSG >> \$CAULDRON_PATH/logs/cauldron.log; else; set VERSION (snap info \$dep | grep \"installed\" | cut -d \":\" -f 2 | tr -d \" \"); set DATE (date); sqlite3 \$CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$$dep', '\$VERSION', '\$DATE');\"; end"
-  end
-
-  # Now we need to make sure the DB is up to date
-  if test -f $CAULDRON_PATH/data/update.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql
   end
 
   # Now we need to update the DB's version
