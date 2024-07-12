@@ -18,4 +18,7 @@ function init_cauldron_DB
   # Make sure add the most recent version to the DB
   set currVersion (git ls-remote --tags $CAULDRON_GIT_REPO | awk '{print $2}' | grep -o "v[0-9]*\.[0-9]*\.[0-9]*" | sort -V | tail -n 1 | sed 's/v//')
   sqlite3 $CAULDRON_DATABASE "INSERT INTO cauldron (version) VALUES ('$currVersion')"
+
+  # Return success
+  return 0
 end

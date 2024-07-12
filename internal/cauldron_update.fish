@@ -164,4 +164,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$LATEST_VERSION')"
 
   styled-banner "Updated!"
+
+  return 0
 end
