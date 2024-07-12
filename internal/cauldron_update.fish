@@ -7,14 +7,14 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Path must exist for us to use
   if not set -q CAULDRON_PATH
     set -Ux CAULDRON_PATH $HOME/.config/cauldron
-
-    # Make sure all vars are set
-    ./$CAULDRON_PATH/tools/__init_cauldron_vars.fish
   end
+
+  # Make sure all vars are set
+  fish -c "$CAULDRON_PATH/tools/__init_cauldron_vars.fish"
 
   # First we need to make sure the DB exists and the var is set
   if not test -f $CAULDRON_DATABASE
-    ./$CAULDRON_INTERNAL_TOOLS/__init_cauldron_DB.fish
+    fish -c "$CAULDRON_INTERNAL_TOOLS/__init_cauldron_DB.fish"
   end
 
   # Now we need to make sure the DB is up to date
@@ -52,7 +52,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     return 0;
   end
 
-  ./$CAULDRON_PATH/tools/__cauldron_backup_user_data.fish
+  fish -c "$CAULDRON_INTERNAL_TOOLS/__backup_cauldron_and_update.fish"
 
   # List of folders with functions
   set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI"
@@ -71,7 +71,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   set -Ux CAULDRON_SPINNERS $CAULDRON_PATH/data/spinners.json
   set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
 
-  ./$CAULDRON_PATH/tools/__install_essential_tools.fish
+  fish -c "$CAULDRON_INTERNAL_TOOLS/__install_essential_tools.fish"
 
   # Now we need to update the DB's version
   sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$LATEST_VERSION')"

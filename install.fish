@@ -15,14 +15,19 @@ if not set -q CAULDRON_PATH
   if not test -d $CAULDRON_PATH
     mkdir -p $CAULDRON_PATH
   end
+end
 
+if not test -d $CAULDRON_PATH/tools
   # Make the tools folder and move over internal tools
   mkdir -p $CAULDRON_PATH/tools
-  cp -r $script_dir/tools/* $CAULDRON_PATH/tools/
-
-  # Make sure all vars are set
-  ./$script_dir/tools/__init_cauldron_vars.fish
 end
+
+cp -r $script_dir/tools/* $CAULDRON_PATH/tools/
+
+set -Ux CAULDRON_INTERNAL_TOOLS $CAULDRON_PATH/tools
+
+# Make sure all vars are set
+fish -c "$CAULDRON_INTERNAL_TOOLS/__init_cauldron_vars.fish"
 
 # First we need to make sure we have cpfunc installed
 if not functions -q cpfunc
@@ -33,7 +38,7 @@ end
 
 # First we need to make sure the DB exists and the var is set
 if not test -f $CAULDRON_DATABASE
-  ./$CAULDRON_INTERNAL_TOOLS/__init_cauldron_DB.fish
+  fish -c "$CAULDRON_INTERNAL_TOOLS/__init_cauldron_DB.fish"
 end
 
 # List of folders with functions
@@ -77,7 +82,7 @@ end
 
 cp $script_dir/dependencies.json $CAULDRON_PATH/dependencies.json
 
-./$CAULDRON_PATH/tools/__install_essential_tools.fish
+fish -c "$CAULDRON_INTERNAL_TOOLS/__install_essential_tools.fish"
 
 styled-banner "Installed!"
 
