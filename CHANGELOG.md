@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.1] - 2024-07-12
 
+### 🐛 Bug Fixes
+
+- *(update)* Fixed a bug that caused the users data directory to not correctly back up
+
+## [0.2.1] - 2024-07-12
+
 ### 🚜 Refactor
 
 - Update cauldron_update.fish to improve directory creation and copying logic
