@@ -1,10 +1,11 @@
 #!/usr/bin/env fish
 
 function update_repo
-      # Version Number
-    set -l func_version "1.3.0"
+    # Version Number
+    set -l func_version "1.4.0"
+    set cauldron_category "Functions"
     # Flag options
-    set -l options v/version h/help
+    set -l options v/version h/help z/cauldron
     argparse -n update_repo $options -- $argv
 
     # if they asked the version just return it
@@ -25,12 +26,35 @@ function update_repo
         return
     end
 
+    # If they asked for the cauldron, just return it
+    if set -q _flag_cauldron
+        echo $cauldron_category
+        return
+    end
+
     # Get sudo so we can update
     sudo -v
 
     # This script is designed to be run whenever VScode is opened
     # Check if aquarium is installed
-    install_aquarium
+    if not functions -q aquarium
+      print_center "🐠 Filling Aquarium 🐠"
+      # Remove the old aquarium (if it exists)
+      if test -d ~/.cache/aquarium
+        rm -rf ~/.cache/aquarium
+      end
+
+      # Make sure the folder exist
+      mkdir -p ~/.cache/aquarium
+
+      # Clone the aquarium repo
+      git clone https://github.com/anandamideio/aquarium.git ~/.cache/aquarium
+
+      # Install the aquarium
+      pushd ~/.cache/aquarium/bin/
+      ./bin/install
+      popd
+    end
 
     # Make sure we know their preferred node packman
     choose_packman -s
