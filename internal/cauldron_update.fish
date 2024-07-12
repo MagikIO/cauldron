@@ -84,9 +84,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # Now we copy the data folder back
   if test -d $tmp_dir
-    # Make sure the data folder exists
-    mkdir -p $CAULDRON_PATH/data
-
     # Copy the data folder back
     cp -r $tmp_dir/ $CAULDRON_PATH/data
   end
@@ -100,11 +97,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Copy and source all the needed functions
   for dir in $CAULDRON_LOCAL_DIRS
     cpfunc $CAULDRON_PATH/$dir/ -d
-  end
-
-  # Install the one off scripts that are not part of the main CLI
-  if not test -d $CAULDRON_PATH/packages
-    mkdir -p $CAULDRON_PATH/packages
   end
 
   cpfunc $CAULDRON_PATH/packages/asdf/ -d
