@@ -22,6 +22,7 @@ end
 
 if not command -q gum
   brew install gum
+  
 end
 
 # As long as their is a dependencies.json file we will install the dependencies
