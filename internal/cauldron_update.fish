@@ -28,10 +28,21 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # Check their database to see what version they are on
   # CREATE TABLE "cauldron" ("version"	TEXT NOT NULL COLLATE RTRIM, PRIMARY KEY("version"));
-  set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron")
+  set -gx CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron")
 
   # Now we check the most recent version
   set LATEST_VERSION (git ls-remote --tags $CAULDRON_GIT_REPO | awk '{print $2}' | grep -o "v[0-9]*\.[0-9]*\.[0-9]*" | sort -V | tail -n 1 | sed 's/v//')
+  # We should exit if CAULDRON_VERSION or LATEST_VERSION is not set or a empty string
+  if test -z $CAULDRON_VERSION
+    familiar "Failed to get the current version of Cauldron"
+    return 1
+  end
+
+  if test -z $LATEST_VERSION
+    familiar "Failed to get the latest version of Cauldron"
+    return 1
+  end
+
   # That will come out like "0.0.0" so we need to split it into an array, then compare each part
   set SPLIT_LATEST_VERSION (string split . $LATEST_VERSION)
   set SPLIT_CAULDRON_VERSION (string split . $CAULDRON_VERSION)
