@@ -1,13 +1,14 @@
 {
   "name": "@magik_io/cauldron",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "With the help of your beloved familiar, become an arcane master of the cauldron",
   "engines": {
     "node": "22",
     "yarn": "4.3.1"
   },
   "scripts": {
-    "run": "tsx node/index.ts"
+    "run": "tsx node/index.ts",
+    "changelog": "git cliff --unreleased -o CHANGELOG.md "
   },
   "dependencies": {
     "consola": "^3.2.3",
