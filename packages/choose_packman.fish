@@ -2,7 +2,7 @@
 
 function choose_packman -d 'Choose the package manager you want to use'
   # Version Number
-  set -l func_version "1.0.0"
+  set -l func_version "1.0.1"
   # Flag options
   set -l options v/version h/help s/silent
   argparse -n choose_packman $options -- $argv
