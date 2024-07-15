@@ -2,7 +2,7 @@
 
 function update_repo
     # Version Number
-    set -l func_version "1.4.0"
+    set -l func_version "1.5.0"
     set cauldron_category "Functions"
     # Flag options
     set -l options v/version h/help z/cauldron
@@ -60,7 +60,7 @@ function update_repo
     choose_packman -s
 
     # If asdf is their preferred version manager, we need to make sure it's installed and set the node version
-    if test $cauldron_packman_pref = "asdf"
+    if test $cauldron_packman_pref = "asdf"; or test $cauldron_packman_pref = "none"; or test $cauldron_packman_pref = "asdf_preferred"
         # First we need to see if they have asdf installed
         if not type -q asdf
             install_asdf
@@ -92,7 +92,7 @@ function update_repo
 
     # Update Homebrew
     print_separator "⚗️ Updating Homebrew ⚗️"
-    brew update && brew upgrade && brew cleanup && brew doctor
+    gum spin --spinner moon --title "Updating System..." -- fish -c "brew update && brew upgrade && brew cleanup && brew doctor"
 
     print_separator "🧶 Rolling up most recent ball of yarn 🧶"
     gum spin --spinner moon --title "Updating node_modules..." -- fish -c "yarn && yarn up"
