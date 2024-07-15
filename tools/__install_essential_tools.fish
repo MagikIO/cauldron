@@ -17,12 +17,15 @@ if not command -q pipx
   end
     pipx ensurepath
     register-python-argcomplete --shell fish pipx >~/.config/fish/completions/pipx.fish
-    pipx install terminaltexteffects --quiet
+end
+
+if not command -q tte
+  pipx ensurepath
+  pipx install terminaltexteffects --quiet
 end
 
 if not command -q gum
   brew install gum
-  
 end
 
 # As long as their is a dependencies.json file we will install the dependencies

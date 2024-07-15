@@ -8,8 +8,9 @@ end
 # Now we need to make sure the DB exists
 if not test -f $CAULDRON_DATABASE
   touch $CAULDRON_DATABASE
-  sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql
 end
+
+sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql
 
 # Now we need to make sure the DB is up to date
 if test -f $CAULDRON_PATH/data/update.sql

@@ -22,12 +22,12 @@ if not test -d $CAULDRON_PATH/tools
   mkdir -p $CAULDRON_PATH/tools
 end
 
-cp -r $script_dir/tools/* $CAULDRON_PATH/tools/
-
+# Copy the tools over
+cp -rf $script_dir/tools/* $CAULDRON_PATH/tools/
 set -Ux CAULDRON_INTERNAL_TOOLS $CAULDRON_PATH/tools
 
 # Make sure all vars are set
-fish -c "$CAULDRON_INTERNAL_TOOLS/__init_cauldron_vars.fish"
+$CAULDRON_INTERNAL_TOOLS/__init_cauldron_vars.fish
 
 # First we need to make sure we have cpfunc installed
 if not functions -q cpfunc
@@ -38,7 +38,7 @@ end
 
 # First we need to make sure the DB exists and the var is set
 if not test -f $CAULDRON_DATABASE
-  fish -c "$CAULDRON_INTERNAL_TOOLS/__init_cauldron_DB.fish"
+  $CAULDRON_INTERNAL_TOOLS/__init_cauldron_DB.fish
 end
 
 # List of folders with functions
@@ -46,7 +46,7 @@ set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "familiar" "internal" "
 
 # We have to patch their version of `installs` with our version
 cpfunc $script_dir/functions/ -d
-cp -r $script_dir/functions/* $CAULDRON_PATH/functions/
+cp -rf $script_dir/functions/* $CAULDRON_PATH/functions/
 
 # Copy and source all the needed functions
 for dir in $CAULDRON_LOCAL_DIRS
@@ -54,20 +54,20 @@ for dir in $CAULDRON_LOCAL_DIRS
     mkdir -p $CAULDRON_PATH/$dir
   end
 
-  cp -r $script_dir/$dir/* $CAULDRON_PATH/$dir/
+  cp -rf $script_dir/$dir/* $CAULDRON_PATH/$dir/
   cpfunc $CAULDRON_PATH/$dir/ -d
 end
 
 # Install the one off scripts that are not part of the main CLI
-cp -r $script_dir/packages/* $CAULDRON_PATH/packages/
+cp -rf $script_dir/packages/* $CAULDRON_PATH/packages/
 cpfunc $CAULDRON_PATH/packages/asdf/ -d
 cpfunc $CAULDRON_PATH/packages/nvm/ -d
 cpfunc $CAULDRON_PATH/packages/choose_packman.fish
 
 # Now we recursively copy the data, docs, node, and setup directories
-cp -r $script_dir/data/* $CAULDRON_PATH/data/
-cp -r $script_dir/docs/* $CAULDRON_PATH/docs/
-cp -r $script_dir/node/* $CAULDRON_PATH/node/
+cp -rf $script_dir/data/* $CAULDRON_PATH/data/
+cp -rf $script_dir/docs/* $CAULDRON_PATH/docs/
+cp -rf $script_dir/node/* $CAULDRON_PATH/node/
 
 # We need to create a few variables to make things easier later
 set -Ux CAULDRON_PALETTES $CAULDRON_PATH/data/palettes.json
@@ -82,8 +82,11 @@ end
 
 cp $script_dir/dependencies.json $CAULDRON_PATH/dependencies.json
 
-fish -c "$CAULDRON_INTERNAL_TOOLS/__install_essential_tools.fish"
+$CAULDRON_INTERNAL_TOOLS/__install_essential_tools.fish
 
+
+# Reload PATH
+source ~/.config/fish/config.fish
 
 styled-banner "Installed!"
 
