@@ -26,40 +26,40 @@ function choose_packman -d 'Choose the package manager you want to use'
       exit 0
   end
 
-  if not set $cauldron_packman_pref
+  if not set -q $cauldron_packman_pref; or test $cauldron_packman_pref = "asdf"; or test $cauldron_packman_pref = "nvm"; or test $cauldron_packman_pref = "none"
     ## Detect if they have a preferred version manager using the following logic:
     # 1. If they have a .tool-versions file, prefer asdf
     # 2. If they have a .nvmrc file, prefer nvm
     # 3. If asdf is installed, prefer asdf
     # 4. If nvm is installed, prefer nvm
     # 5. If none of the above, we need to prompt the user if we can install asdf
-    set -Ux cauldron_packman_pref asdf
+    set -gx cauldron_packman_pref asdf
     if test -f .tool-versions
-        set -Ux cauldron_packman_pref asdf
+        set -gx cauldron_packman_pref asdf
     else if test -f .nvmrc
-        set -Ux cauldron_packman_pref nvm
+        set -gx cauldron_packman_pref nvm
     else if type -q asdf
-        set -Ux cauldron_packman_pref asdf
+        set -gx cauldron_packman_pref asdf
     else if type -q nvm
-        set -Ux cauldron_packman_pref nvm
+        set -gx cauldron_packman_pref nvm
     else
-        set -Ux cauldron_packman_pref none
+        set -gx cauldron_packman_pref none
     end
 
     if test $cauldron_packman_pref = "none"
       f-says "Cauldron does not seem to know your preferred Node package manager yet, do you prefer "(bold "asdf")" or "(bold "nvm")"?"
       choose "asdf" "nvm" --height 4 --header "Node PackMan Pref"
 
-      set -Ux cauldron_packman_pref $CAULDRON_LAST_CHOICE
+      set -gx cauldron_packman_pref $CAULDRON_LAST_CHOICE
     else if test $cauldron_packman_pref = "asdf" && not set -q _flag_silent
       confirm "Cauldron has detected that you prefer asdf as your Node package manager, do you want to change it to nvm?"
       if test $CAULDRON_LAST_CONFIRM = "true"
-        set -Ux cauldron_packman_pref nvm
+        set -gx cauldron_packman_pref nvm
       end
     else if test $cauldron_packman_pref = "nvm" && not set -q _flag_silent
       confirm "Cauldron has detected that you prefer nvm as your Node package manager, do you want to change it to asdf?"
       if test $CAULDRON_LAST_CONFIRM = "true"
-        set -Ux cauldron_packman_pref asdf
+        set -gx cauldron_packman_pref asdf
       end
     end
   else
@@ -68,7 +68,7 @@ function choose_packman -d 'Choose the package manager you want to use'
       choose "Yes" "No" --height 4 --header "Change Node PackMan Pref"
 
       if test $CAULDRON_LAST_CHOICE = "Yes"
-        set -Ux cauldron_packman_pref none
+        set -eg cauldron_packman_pref
         choose_packman
       end
     end
