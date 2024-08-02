@@ -3,7 +3,7 @@
 function update_repo
     # Version Number
     set -l func_version "1.5.0"
-    set cauldron_category "Functions"
+    set cauldron_category Functions
     # Flag options
     set -l options v/version h/help z/cauldron
     argparse -n update_repo $options -- $argv
@@ -37,44 +37,16 @@ function update_repo
 
     # This script is designed to be run whenever VScode is opened
     # Check if aquarium is installed
-    if not functions -q aquarium
-      print_center "🐠 Filling Aquarium 🐠"
-      # Remove the old aquarium (if it exists)
-      if test -d ~/.cache/aquarium
-        rm -rf ~/.cache/aquarium
-      end
-
-      # Make sure the folder exist
-      mkdir -p ~/.cache/aquarium
-
-      # Clone the aquarium repo
-      git clone https://github.com/anandamideio/aquarium.git ~/.cache/aquarium
-
-      # Install the aquarium
-      pushd ~/.cache/aquarium/bin/
-      ./bin/install
-      popd
-    end
+    print_separator "🐠 Filling Aquarium 🐠"
+    ./update/aquarium_update_step.fish
 
     # Make sure we know their preferred node packman
     choose_packman -s
 
-    # If asdf is their preferred version manager, we need to make sure it's installed and set the node version
-    if test $cauldron_packman_pref = "asdf"; or test $cauldron_packman_pref = "none"; or test $cauldron_packman_pref = "asdf_preferred"
-        # First we need to see if they have asdf installed
-        if not type -q asdf
-            install_asdf
-        end
-        # Then we need to set the node version
-        gum spin --spinner moon --title "Updating Node..." -- fish -c asdf_update_node
-        gum spin --spinner moon --title "Updating Ruby..." -- fish -c asdf_update_ruby
-        gum spin --spinner moon --title "Updating Go..." -- fish -c asdf_update_go
-    end
-
-    # If they prefer nvm
-    if test $cauldron_packman_pref = nvm
-        # We need to set the node version
-        gum spin --spinner moon --title "Updating Node..." -- fish -c nvm_update_node
+    # Update asdf
+    if command -q asdf
+        print_separator "📦 Updating asdf 📦"
+        ./update/asdf_update_step.fish
     end
 
     print_separator "⬆️ Updating Branch ⬆️"
