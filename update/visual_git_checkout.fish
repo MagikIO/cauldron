@@ -8,3 +8,4 @@ function visual_git_checkout
         echo "No branch selected."
     end
 end
+visual_git_checkout
