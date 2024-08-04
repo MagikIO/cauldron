@@ -1,3 +1,5 @@
+#!/usr/bin/env fish
+
 function aquarium_update_step
     if not functions -q aquarium
         print_center "🐠 Filling Aquarium 🐠"
