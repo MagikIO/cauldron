@@ -24,12 +24,6 @@ function __cauldron_asdf_update_step
         # Add Instruction to close the pager
         echo ""
         echo "Press 'q' to close this and continue" >>$log_file
-
-        # Show the user a pager with the output
-        shiny pager <$log_file
-
-        # Remove the log file
-        rm $log_file
     end
 
     # If they prefer nvm

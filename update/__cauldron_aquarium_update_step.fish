@@ -1,8 +1,42 @@
 #!/usr/bin/env fish
 
 function __cauldron_aquarium_update_step
-    if not functions -q aquarium
-        print_center "🐠 Filling Aquarium 🐠"
+    if functions -q aquarium
+        # Create a log file to pipe the output to
+        mkdir -p $CAULDRON_PATH/logs
+        set log_file $CAULDRON_PATH/logs/aqua_update.txt
+        touch $log_file
+
+        # Reset the log file and add a time stamp
+        echo (date -u) >$log_file
+
+        # Check the most recent version using `getLatestGithubReleaseAsJSON anandamideio/aquarium`
+        # Which will return the latest release in JSON format
+        set -l latestAquaRelease (getLatestGithubReleaseAsJSON anandamideio/aquarium)
+        # This will give us a string in the format of "v1.0.0"
+        set -l latestAquaVersion (echo $latestAquaRelease | jq -r '.name')
+        echo "Latest version of Aquarium is" $latestAquaVersion >>$log_file
+        # Get the current version of aquarium (returns in format "1.0.0")
+        set -l currentAquaVersion (aquarium -v)
+        echo "Current version of Aquarium is" $currentAquaVersion >>$log_file
+
+        # If the versions are the same, then we don't need to update
+        if test $latestAquaVersion = "v$currentAquaVersion"
+            echo (badge green "Aquarium") "is already up to date"
+            return 0
+        end
+
+        # If the versions are different, then we need to prompt the user to confirm it's okay to update
+        confirm "Would you like to update Aquarium to $latestAquaVersion?"
+
+        # If the user says no, then we don't update
+        if $CAULDRON_LAST_CONFIRM = false
+            return 0
+        end
+
+        # If the user says yes, then we update
+        echo "Updating Aquarium to $latestAquaVersion" >>$log_file
+
         # Remove the old aquarium (if it exists)
         if test -d ~/.cache/aquarium
             rm -rf ~/.cache/aquarium
@@ -16,7 +50,13 @@ function __cauldron_aquarium_update_step
 
         # Install the aquarium
         pushd ~/.cache/aquarium/bin/
-        ./bin/install
+        ./install
         popd
+
+        # Check the version again to make sure it installed correctly
+        set -l newAquaVersion (aquarium -v)
+        echo "New version of Aquarium is" $newAquaVersion >>$log_file
+
+        return 0
     end
 end
