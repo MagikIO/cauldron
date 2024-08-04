@@ -10,10 +10,9 @@ function __cauldron_aquarium_update_step
         # Reset the log file and add a time stamp
         echo (date -u) >$log_file
 
-        # Check the most recent version using `getLatestGithubReleaseAsJSON anandamideio/aquarium`
-        # Which will return the latest release in JSON format, so we will us jq to get the version
+        # Check the most recent version using `getLatestGithubReleaseTag anandamideio/aquarium`
         # Which will look like "v1.0.0"
-        set -l latestAquaVersion (getLatestGithubReleaseAsJSON anandamideio/aquarium | jq -r '.name')
+        set -l latestAquaVersion (getLatestGithubReleaseTag anandamideio/aquarium)
         echo "Latest version of Aquarium is" $latestAquaVersion >>$log_file
         # Get the current version of aquarium (returns in format "1.0.0", minus the "v" and without color codes)
         set -l currentAquaVersion (aquarium -v | sed -r "s/\x1B\[[0-9;]*[mK]//g")
