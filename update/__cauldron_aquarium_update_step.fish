@@ -15,7 +15,7 @@ function __cauldron_aquarium_update_step
         set latestAquaVersion (getLatestGithubReleaseTag anandamideio/aquarium | string trim)
         echo "Latest version of Aquarium is" $latestAquaVersion >>$log_file
         # Get the current version of aquarium (returns in format "1.0.0", minus the "v" and without color codes)
-        set currentAquaVersion (echo "v"(aquarium -v) | string trim)
+        set currentAquaVersion (echo "v"(aquarium -vp) | string trim)
         echo "Current version of Aquarium is" $currentAquaVersion >>$log_file
 
         # If the versions are the same, then we don't need to update
