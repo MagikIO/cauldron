@@ -32,12 +32,19 @@ function update_repo
         return
     end
 
+    # Create a log file to pipe the output to
+    mkdir -p $CAULDRON_PATH/logs
+    set log_file $CAULDRON_PATH/logs/repo_update.txt
+    touch $log_file
+
+    # Reset the log file and add a date stamp
+    echo (date) >$log_file
+
     # Get sudo so we can update
     sudo -v
 
     # This script is designed to be run whenever VScode is opened
     # Check if aquarium is installed
-    print_separator "🐠 Filling Aquarium 🐠"
     __cauldron_aquarium_update_step
 
     # Make sure we know their preferred node packman
@@ -45,11 +52,9 @@ function update_repo
 
     # Update asdf
     if command -q asdf
-        print_separator "📦 Updating asdf 📦"
         __cauldron_asdf_update_step
     end
 
-    print_separator "⬆️ Updating Branch ⬆️"
     git fetch
 
     print_separator "🌳 Choose what branch you'd like to work on 🌳"
@@ -59,14 +64,10 @@ function update_repo
     print_separator "✂️ Trimming unneeded branches ✂️"
     git gone
 
-    print_separator "🆙 Updating your system 🆙"
-    gum spin --spinner moon --title "Updating System..." -- fish -c "sudo apt -y update && sudo apt -y upgrade && sudo apt -y autoclean"
+    print_separator "🆙 Updating your system & your brews ⚗️"
+    gum spin --spinner moon --title "Updating System..." -- fish -c "$CAULDRON_PATH/update/__cauldron_system_update_step.fish"
 
-    # Update Homebrew
-    print_separator "⚗️ Updating Homebrew ⚗️"
-    gum spin --spinner moon --title "Updating System..." -- fish -c "brew update && brew upgrade && brew cleanup && brew doctor"
-
-    print_separator "🧶 Rolling up most recent ball of yarn 🧶"
+    # Update Yarn and local dependencies
     gum spin --spinner moon --title "Updating node_modules..." -- fish -c "yarn && yarn up"
 
     print_separator "🧶 Upgrading dependencies 🧶"

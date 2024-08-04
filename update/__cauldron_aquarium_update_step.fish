@@ -11,13 +11,12 @@ function __cauldron_aquarium_update_step
         echo (date -u) >$log_file
 
         # Check the most recent version using `getLatestGithubReleaseAsJSON anandamideio/aquarium`
-        # Which will return the latest release in JSON format
-        set -l latestAquaRelease (getLatestGithubReleaseAsJSON anandamideio/aquarium)
-        # This will give us a string in the format of "v1.0.0"
-        set -l latestAquaVersion (echo $latestAquaRelease | jq -r '.name')
+        # Which will return the latest release in JSON format, so we will us jq to get the version
+        # Which will look like "v1.0.0"
+        set -l latestAquaVersion (getLatestGithubReleaseAsJSON anandamideio/aquarium | jq -r '.name')
         echo "Latest version of Aquarium is" $latestAquaVersion >>$log_file
-        # Get the current version of aquarium (returns in format "1.0.0")
-        set -l currentAquaVersion (aquarium -v)
+        # Get the current version of aquarium (returns in format "1.0.0", minus the "v" and without color codes)
+        set -l currentAquaVersion (aquarium -v | sed -r "s/\x1B\[[0-9;]*[mK]//g")
         echo "Current version of Aquarium is" $currentAquaVersion >>$log_file
 
         # If the versions are the same, then we don't need to update
