@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 
-function asdf_update_step
+function __cauldron_asdf_update_step
     # If asdf is their preferred version manager, we need to make sure it's installed and set the node version
     if test $cauldron_packman_pref = asdf; or test $cauldron_packman_pref = none; or test $cauldron_packman_pref = asdf_preferred
         # First we need to see if they have asdf installed

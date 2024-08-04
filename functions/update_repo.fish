@@ -38,7 +38,7 @@ function update_repo
     # This script is designed to be run whenever VScode is opened
     # Check if aquarium is installed
     print_separator "🐠 Filling Aquarium 🐠"
-    $CAULDRON_PATH/update/aquarium_update_step.fish
+    __cauldron_aquarium_update_step
 
     # Make sure we know their preferred node packman
     choose_packman -s
@@ -46,7 +46,7 @@ function update_repo
     # Update asdf
     if command -q asdf
         print_separator "📦 Updating asdf 📦"
-        $CAULDRON_PATH//update/asdf_update_step.fish
+        __cauldron_asdf_update_step
     end
 
     print_separator "⬆️ Updating Branch ⬆️"

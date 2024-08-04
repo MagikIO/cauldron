@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 
-function aquarium_update_step
+function __cauldron_aquarium_update_step
     if not functions -q aquarium
         print_center "🐠 Filling Aquarium 🐠"
         # Remove the old aquarium (if it exists)
