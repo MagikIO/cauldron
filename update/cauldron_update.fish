@@ -73,7 +73,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
 
   if test -f $CAULDRON_PATH/data/schema.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql 2> /dev/null
   else
     echo "Failed to find the schema.sql file in the data folder, please file an issue on GitHub"
     return 1
@@ -81,10 +81,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # Now we need to make sure the DB is up to date
   if test -f $CAULDRON_PATH/data/update.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql
-  else 
-    echo "Failed to find the update.sql file in the data folder, please file an issue on GitHub"
-    return 1
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql 2> /dev/null
   end
 
   if set -qg CAULDRON_VERSION
