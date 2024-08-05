@@ -75,7 +75,7 @@ function update_repo
     gum spin --spinner moon --title "Updating System..." -- "sudo apt update --fix-missing >> $log_file && sudo apt -y upgrade >> $log_file"
 
     print_separator " Homebrew "
-    echo (badge pink "Homebrew") "Updating Homebrew" >>$log_file
+    echo (badge black "Homebrew") "Updating Homebrew" >>$log_file
     gum spin --spinner moon --title "Updating Homebrew..." -- "brew update >> $log_file && brew upgrade >> $log_file && brew cleanup >> $log_file && brew doctor >> $log_file"
 
     print_separator " Yarn "
@@ -84,7 +84,7 @@ function update_repo
     gum spin --spinner moon --title "Installing the most recent version of the your modules from remote..." -- fish -c "yarn install --frozen-lockfile >> $log_file"
     yarn upgrade-interactive
 
-    gum pager $log_file
+    gum pager <$log_file
 
     return 0
 end
