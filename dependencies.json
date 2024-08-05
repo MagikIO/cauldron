@@ -3,8 +3,8 @@
   "apt": [
     "bat", "cbonsai", "cowsay",
     "fortune", "jp2a", "linuxlogo", "pv",
-    "hyfetch", "build-essential", "procps",
-    "curl", "git", "toilet", "sqlite3"
+    "hyfetch", "procps", "curl", "git",
+    "toilet", "sqlite3"
   ],
   "brew": ["glow", "fzf", "timg", "watchman", "lsd", "fx", "navi", "rig"],
   "snap": [
