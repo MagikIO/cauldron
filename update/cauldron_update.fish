@@ -173,6 +173,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   cpfunc $CAULDRON_PATH/packages/nvm/ -d
   cpfunc $CAULDRON_PATH/packages/choose_packman.fish
 
+  git config --global alias.visual-checkout '!fish $CAULDRON_PATH/update/visual_git_checkout.fish'
+
   # We need to make sure these variables are set
   set -Ux CAULDRON_PALETTES $CAULDRON_PATH/data/palettes.json
   set -Ux CAULDRON_SPINNERS $CAULDRON_PATH/data/spinners.json
