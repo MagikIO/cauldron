@@ -23,7 +23,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
 
   # Check their database to see what version they are on
-  set -gx CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron")
+  set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron")
 
   # Now we check the most recent version
   set LATEST_VERSION (git ls-remote --tags $CAULDRON_GIT_REPO | awk '{print $2}' | grep -o "v[0-9]*\.[0-9]*\.[0-9]*" | sort -V | tail -n 1 | sed 's/v//')
