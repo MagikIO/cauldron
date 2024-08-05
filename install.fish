@@ -42,7 +42,7 @@ if not test -f $CAULDRON_DATABASE
 end
 
 # List of folders with functions
-set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "familiar" "internal" "setup" "text" "UI"
+set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "familiar" "internal" "setup" "text" "UI" "update"
 
 # We have to patch their version of `installs` with our version
 cpfunc $script_dir/functions/ -d
