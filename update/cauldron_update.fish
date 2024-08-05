@@ -221,6 +221,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       set apt_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.apt[]')
       set brew_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.brew[]')
       set snap_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.snap[]')
+
+      sudo -v
   
       for dep in $apt_dependencies
           gum spin --spinner moon --title "Installing $dep..." -- fish -c "
