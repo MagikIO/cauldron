@@ -43,34 +43,62 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
 
   # Make sure all vars are set
-  if test -f $CAULDRON_PATH/tools/__init_cauldron_vars.fish
-    ./$CAULDRON_PATH/tools/__init_cauldron_vars.fish
-  else
-    echo " You seem to be missing one of our internal tools (__init_cauldron_vars.fish), please file a bug report on GitHub"
-    return 1
+  if not set -q __CAULDRON_DOCUMENTATION_PATH
+    set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
+  
+    if not test -d $__CAULDRON_DOCUMENTATION_PATH
+      mkdir -p $__CAULDRON_DOCUMENTATION_PATH
+    end
   end
-
-  if test -f $CAULDRON_PATH/tools/__init_cauldron_DB.fish
-    # First we need to make sure the DB exists and the var is set
+  
+  if not set -q CAULDRON_GIT_REPO
+    set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
+  end
+  
+  if not set -q CAULDRON_DATABASE
+    set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
+  
     if not test -f $CAULDRON_DATABASE
-      ./$CAULDRON_PATH/tools/__init_cauldron_DB.fish
+      mkdir -p $CAULDRON_PATH/data
+      touch $CAULDRON_DATABASE
     end
   else
-    echo " You seem to be missing one of our internal tools (__init_cauldron_DB.fish), please file a bug report on GitHub"
+    if set -qg CAULDRON_VERSION
+      set -eg CAULDRON_VERSION
+    end
+
+    if not set -q CAULDRON_VERSION
+      set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron") 2> /dev/null
+  
+      if test -z $CAULDRON_VERSION
+        set -gx CAULDRON_VERSION (git ls-remote --tags $CAULDRON_GIT_REPO | awk '{print $2}' | grep -o "v[0-9]*\.[0-9]*\.[0-9]*" | sort -V | tail -n 1 | sed 's/v//')
+        sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$CAULDRON_VERSION')"
+      end
+    end
+  end
+  
+  if not set -q CAULDRON_INTERNAL_TOOLS
+    set -Ux CAULDRON_INTERNAL_TOOLS $CAULDRON_PATH/tools
+  
+    if not test -d $CAULDRON_INTERNAL_TOOLS
+      mkdir -p $CAULDRON_INTERNAL_TOOLS
+    end
+  end
+
+  if test -f $CAULDRON_PATH/data/schema.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql
+  else
+    echo "Failed to find the schema.sql file in the data folder, please file an issue on GitHub"
     return 1
   end
 
   # Now we need to make sure the DB is up to date
   if test -f $CAULDRON_PATH/data/update.sql
     sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql
+  else 
+    echo "Failed to find the update.sql file in the data folder, please file an issue on GitHub"
+    return 1
   end
-
-  if set -qg CAULDRON_VERSION
-    set -eg CAULDRON_VERSION
-  end
-
-  # Check their database to see what version they are on
-  set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron")
 
   # Now we check the most recent version (will be in format of "1.0.0")
   set LATEST_VERSION (getLatestGithubReleaseTag MagikIO/cauldron | string trim --left 'v')
