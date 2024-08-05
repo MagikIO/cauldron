@@ -5,7 +5,7 @@ function update_repo
     set -l func_version "1.5.0"
     set cauldron_category Functions
     # Flag options
-    set -l options v/version h/help z/cauldron
+    set -l options v/version h/help z/cauldron V/verbose
     argparse -n update_repo $options -- $argv
 
     # if they asked the version just return it
@@ -99,7 +99,13 @@ function update_repo
     echo "" >>$log_file
     echo "Press 'q' to close this and continue" >>$log_file
 
-    gum pager <$log_file
+    if set -q _flag_verbose
+        gum pager <$log_file
+    end
+
+    clear
+
+    familiar "Repo is ready to go!"
 
     return 0
 end
