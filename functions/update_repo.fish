@@ -75,7 +75,7 @@ function update_repo
 
     print_separator " System "
     echo (badge yellow "System") >>$log_file
-    gum spin --spinner moon --title "Updating System..." -- "sudo apt update --fix-missing >> $log_file && sudo apt -y upgrade >> $log_file"
+    gum spin --spinner moon --title "Updating System..." -- "fish -c __cauldron_system_update_step >> $log_file"
     echo >>$log_file
 
     print_separator " Homebrew "
