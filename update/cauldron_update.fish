@@ -107,12 +107,18 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # We should exit if CAULDRON_VERSION or LATEST_VERSION is not set or a empty string
   if test -z $CAULDRON_VERSION
+    if set -qg CAULDRON_FAMILIAR
+      set -eg CAULDRON_FAMILIAR
+    end
     set -Ux CAULDRON_FAMILIAR suse
     familiar "Failed to pull which version of Cauldron you are on from the db :( "
     return 1
   end
 
   if test -z $LATEST_VERSION
+    if set -qg CAULDRON_FAMILIAR
+      set -eg CAULDRON_FAMILIAR
+    end
     set -Ux CAULDRON_FAMILIAR suse
     familiar "Failed to pull the latest version of Cauldron from GitHub :( "
     return 1
@@ -124,10 +130,16 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # Now we need to compare the two versions
   if test $SPLIT_LATEST_VERSION[1] -gt $SPLIT_CAULDRON_VERSION[1] || test $SPLIT_LATEST_VERSION[2] -gt $SPLIT_CAULDRON_VERSION[2] || test $SPLIT_LATEST_VERSION[3] -gt $SPLIT_CAULDRON_VERSION[3]
+    if set -qg CAULDRON_FAMILIAR
+      set -eg CAULDRON_FAMILIAR
+    end
     set -Ux CAULDRON_FAMILIAR suse
     # We need to update
     familiar "Updating to version $LATEST_VERSION"
   else
+    if set -qg CAULDRON_FAMILIAR
+      set -eg CAULDRON_FAMILIAR
+    end
     set -Ux CAULDRON_FAMILIAR suse
     # We are already up to date
     familiar "You are already up to date!"
@@ -260,6 +272,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$LATEST_VERSION')"
 
   styled-banner "Updated!"
+
+  familiars
 
   return 0
 end
