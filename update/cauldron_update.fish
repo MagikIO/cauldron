@@ -103,17 +103,17 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
 
   # Now we check the most recent version (will be in format of "1.0.0")
-  set LATEST_VERSION (getLatestGithubReleaseTag MagikIO/cauldron | string trim --left 'v')
+  set LATEST_VERSION (getLatestGithubReleaseTag MagikIO/cauldron | string replace -r '^v' '')
 
   # We should exit if CAULDRON_VERSION or LATEST_VERSION is not set or a empty string
   if test -z $CAULDRON_VERSION
-    set -UX CAULDRON_FAMILIAR suse
+    set -Ux CAULDRON_FAMILIAR suse
     familiar "Failed to pull which version of Cauldron you are on from the db :( "
     return 1
   end
 
   if test -z $LATEST_VERSION
-    set -UX CAULDRON_FAMILIAR suse
+    set -Ux CAULDRON_FAMILIAR suse
     familiar "Failed to pull the latest version of Cauldron from GitHub :( "
     return 1
   end
@@ -124,11 +124,11 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # Now we need to compare the two versions
   if test $SPLIT_LATEST_VERSION[1] -gt $SPLIT_CAULDRON_VERSION[1] || test $SPLIT_LATEST_VERSION[2] -gt $SPLIT_CAULDRON_VERSION[2] || test $SPLIT_LATEST_VERSION[3] -gt $SPLIT_CAULDRON_VERSION[3]
-    set -UX CAULDRON_FAMILIAR suse
+    set -Ux CAULDRON_FAMILIAR suse
     # We need to update
     familiar "Updating to version $LATEST_VERSION"
   else
-    set -UX CAULDRON_FAMILIAR suse
+    set -Ux CAULDRON_FAMILIAR suse
     # We are already up to date
     familiar "You are already up to date!"
     return 0;
