@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🚜 Refactor
+
+- Improve directory creation and copying logic in cauldron_update.fish
+- Improve directory creation and copying logic in cauldron_update.fish
+- Improve directory creation and copying logic in cauldron_update.fish
+- Update Homebrew and yarn in update_repo.fish
+- Update package manager preference logic in choose_packman.fish
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Update ASDF installation logic and add Node.js plugin installation
+- Add visual_git_checkout function for easier branch selection
+- Add visual_git_checkout function for easier branch selection
+- Improve visual_git_checkout function for easier branch selection
+- Update Aquarium installation logic and add version check
+- Update Aquarium installation logic, add version check, and improve visual_git_checkout function
+- Update getLatestGithubReleaseTag function to handle empty target and improve error handling
+- Update Aquarium installation logic and version check
+- Update Aquarium installation logic to include verbose flag for version check
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update devDependencies in package.json
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Update update_repo function to include ASDF and Git updates
+- Include "update" folder in CAULDRON_LOCAL_DIRS
+- Include "update" folder in CAULDRON_LOCAL_DIRS
+- Update Cauldron update script to include version check and help option
+- Update Cauldron update script to include version check and help option
+- Update Cauldron update script to include version check and help option
+- Update Cauldron update script to include version check and help option
+- Update package.json script to remove unnecessary tag argument
+
 ## [0.3.1] - 2024-07-12
 
 ### 🚜 Refactor
