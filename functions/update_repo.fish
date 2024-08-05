@@ -40,10 +40,19 @@ function update_repo
     # Reset the log file and add a date stamp
     echo "Update Repo Results as of ("(date)")" >$log_file
     echo >>$log_file
+
+    sudo -v
+
+    print_separator " System "
+    echo (badge yellow "System") >>$log_file
+    __cauldron_system_update_step
+    cat $CAULDRON_PATH/logs/system_update.txt >>$log_file
+    echo >>$log_file
+
     # Get sudo so we can update
     print_separator " Aquarium "
     echo (badge blue "Aquarium") >>$log_file
-    sudo -v
+
     __cauldron_aquarium_update_step
     cat $CAULDRON_PATH/logs/aqua_update.txt >>$log_file
     echo >>$log_file
@@ -73,15 +82,11 @@ function update_repo
     echo (badge purple "Git") "Trimmed unneeded branches for you"
     echo >>$log_file
 
-    print_separator " System "
-    echo (badge yellow "System") >>$log_file
-    __cauldron_system_update_step
-    cat $CAULDRON_PATH/logs/system_update.txt >>$log_file
-    echo >>$log_file
-
     print_separator " Homebrew "
     echo (badge black "Homebrew") >>$log_file
-    gum spin --spinner moon --title "Updating Homebrew..." -- "fish brew update >> $log_file; and brew upgrade >> $log_file; and brew cleanup >> $log_file"
+    brew update >>$log_file
+    brew upgrade >>$log_file
+    brew cleanup >>$log_file
     echo >>$log_file
 
     print_separator " Yarn "
