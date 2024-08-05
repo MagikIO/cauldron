@@ -7,8 +7,7 @@ function __cauldron_aquarium_update_step
         set log_file $CAULDRON_PATH/logs/aqua_update.txt
         touch $log_file
 
-        # Reset the log file and add a time stamp
-        echo (date -u) >$log_file
+        echo >$log_file
 
         # Check the most recent version using `getLatestGithubReleaseTag anandamideio/aquarium`
         # Which will look like "v1.0.0"
@@ -20,7 +19,7 @@ function __cauldron_aquarium_update_step
 
         # If the versions are the same, then we don't need to update
         if test "$latestAquaVersion" = "$currentAquaVersion"
-            echo (badge green "Aquarium") "is already up to date"
+            echo (badge blue "Aquarium") "is already up to date"
             return 0
         end
 
@@ -29,6 +28,7 @@ function __cauldron_aquarium_update_step
 
         # If the user says no, then we don't update
         if $CAULDRON_LAST_CONFIRM = false
+            echo (badge blue "Aquarium") "update was declined" >>$log_file
             return 0
         end
 
@@ -53,7 +53,7 @@ function __cauldron_aquarium_update_step
 
         # Check the version again to make sure it installed correctly
         set -l newAquaVersion (aquarium -v)
-        echo "New version of Aquarium is" $newAquaVersion >>$log_file
+        echo (badge blue "Aquarium") "is now at $newAquaVersion" | tee -a $log_file
 
         return 0
     end

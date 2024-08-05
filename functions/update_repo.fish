@@ -38,15 +38,19 @@ function update_repo
     touch $log_file
 
     # Reset the log file and add a date stamp
-    echo (date) >$log_file
-
+    print_separator " Update Repo Script Results " >>$log_file
+    echo "Run on "(date) >>$log_file
 
     # Get sudo so we can update
+    print_separator " Aquarium "
+    echo (badge blue "Aquarium") "Updating Aquarium" >>$log_file
     sudo -v
 
     # This script is designed to be run whenever VScode is opened
     # Check if aquarium is installed
     __cauldron_aquarium_update_step
+    cat $CAULDRON_PATH/logs/aqua_update.txt >>$log_file
+    echo >>$log_file
 
     print_separator " ASDF "
     echo (badge blue "ASDF") "Updating ASDF" >>$log_file
@@ -59,29 +63,36 @@ function update_repo
         __cauldron_asdf_update_step
     end
 
+    cat $CAULDRON_PATH/logs/asdf_update.txt >>$log_file
+    echo >>$log_file
+
     print_separator " Git "
     echo (badge purple "Git") "Updating the repository" >>$log_file
-    git fetch
-    git visual-checkout
+    git fetch --all --prune --tags --quiet >>$log_file
+    git visual-checkout >>$log_file
     echo (badge purple "Git") "Moved to branch '"(bold (git branch --show-current))"'"
-    git pull
+    git pull --rebase --autostash --quiet >>$log_file
     echo (badge purple "Git") "Grabbed most recent changes from remote"
     git gone
     echo (badge purple "Git") "Trimmed unneeded branches for you"
+    echo >>$log_file
 
     print_separator " System "
     echo (badge yellow "System") "Updating the system" >>$log_file
-    sudo -v
     gum spin --spinner moon --title "Updating System..." -- "sudo apt update --fix-missing >> $log_file && sudo apt -y upgrade >> $log_file"
+    sudo apt -y autoclean >>$log_file
+    echo (badge green "Success") "Finished upgrading the system" >>$log_file
+    echo >>$log_file
 
     print_separator " Homebrew "
     echo (badge black "Homebrew") "Updating Homebrew" >>$log_file
     gum spin --spinner moon --title "Updating Homebrew..." -- "brew update >> $log_file && brew upgrade >> $log_file && brew cleanup >> $log_file && brew doctor >> $log_file"
+    echo (badge green "Success") "Finished upgrading Homebrew" >>$log_file
 
     print_separator " Yarn "
     echo (badge green "Yarn") "Updating Yarn and local dependencies" >>$log_file
     # Update Yarn and local dependencies
-    gum spin --spinner moon --title "Installing the most recent version of the your modules from remote..." -- fish -c "yarn install --frozen-lockfile >> $log_file"
+    gum spin --spinner moon --title "Installing the most recent version of the your modules from remote..." -- fish -c "yarn install >> $log_file"
     yarn upgrade-interactive
 
     gum pager <$log_file

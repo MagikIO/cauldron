@@ -8,8 +8,7 @@ function __cauldron_asdf_update_step
         set log_file $CAULDRON_PATH/logs/asdf_update.txt
         touch $log_file
 
-        # Reset the log file and add a date stamp
-        echo (date) >$log_file
+        echo >$log_file
 
         # First we need to see if they have asdf installed
         if not type -q asdf
@@ -20,10 +19,6 @@ function __cauldron_asdf_update_step
         gum spin --spinner moon --title "Updating Node..." -- fish -c __cauldron_asdf_update_node >>$log_file
         gum spin --spinner moon --title "Updating Ruby..." -- fish -c __cauldron_asdf_update_ruby >>$log_file
         gum spin --spinner moon --title "Updating Go..." -- fish -c __cauldron_asdf_update_go >>$log_file
-
-        # Add Instruction to close the pager
-        echo ""
-        echo "Press 'q' to close this and continue" >>$log_file
     end
 
     # If they prefer nvm
