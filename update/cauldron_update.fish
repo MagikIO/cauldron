@@ -62,19 +62,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       mkdir -p $CAULDRON_PATH/data
       touch $CAULDRON_DATABASE
     end
-  else
-    if set -qg CAULDRON_VERSION
-      set -eg CAULDRON_VERSION
-    end
-
-    if not set -q CAULDRON_VERSION
-      set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron") 2> /dev/null
-  
-      if test -z $CAULDRON_VERSION
-        set -gx CAULDRON_VERSION (git ls-remote --tags $CAULDRON_GIT_REPO | awk '{print $2}' | grep -o "v[0-9]*\.[0-9]*\.[0-9]*" | sort -V | tail -n 1 | sed 's/v//')
-        sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$CAULDRON_VERSION')"
-      end
-    end
   end
   
   if not set -q CAULDRON_INTERNAL_TOOLS
@@ -98,6 +85,19 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   else 
     echo "Failed to find the update.sql file in the data folder, please file an issue on GitHub"
     return 1
+  end
+
+  if set -qg CAULDRON_VERSION
+    set -eg CAULDRON_VERSION
+  end
+
+  if not set -q CAULDRON_VERSION
+    set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron") 2> /dev/null
+
+    if test -z $CAULDRON_VERSION
+      set -gx CAULDRON_VERSION (git ls-remote --tags $CAULDRON_GIT_REPO | awk '{print $2}' | grep -o "v[0-9]*\.[0-9]*\.[0-9]*" | sort -V | tail -n 1 | sed 's/v//')
+      sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$CAULDRON_VERSION')"
+    end
   end
 
   # Now we check the most recent version (will be in format of "1.0.0")
