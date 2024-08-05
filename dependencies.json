@@ -1,10 +1,9 @@
 {
   "version": "1.0.6",
   "apt": [
-    "bat", "cbonsai", "cowsay",
-    "fortune", "jp2a", "linuxlogo", "pv",
-    "hyfetch", "procps", "curl", "git",
-    "toilet", "sqlite3"
+    "bat", "cbonsai", "cowsay", "fortune",
+    "jp2a", "linuxlogo", "pv", "hyfetch",
+    "curl", "git", "toilet", "sqlite3"
   ],
   "brew": ["glow", "fzf", "timg", "watchman", "lsd", "fx", "navi", "rig"],
   "snap": [
