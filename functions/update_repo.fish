@@ -84,5 +84,7 @@ function update_repo
     gum spin --spinner moon --title "Installing the most recent version of the your modules from remote..." -- fish -c "yarn install --frozen-lockfile >> $log_file"
     yarn upgrade-interactive
 
+    gum pager $log_file
+
     return 0
 end
