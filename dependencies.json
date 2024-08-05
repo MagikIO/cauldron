@@ -4,9 +4,9 @@
     "bat", "cbonsai", "cowsay",
     "fortune", "jp2a", "linuxlogo", "pv",
     "hyfetch", "build-essential", "procps",
-    "curl", "git", "rig", "toilet", "sqlite3"
+    "curl", "git", "toilet", "sqlite3"
   ],
-  "brew": ["glow", "fzf", "timg", "watchman", "lsd", "fx", "navi"],
+  "brew": ["glow", "fzf", "timg", "watchman", "lsd", "fx", "navi", "rig"],
   "snap": [
     "lolcat-c"
   ]

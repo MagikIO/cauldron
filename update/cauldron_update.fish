@@ -72,6 +72,11 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     end
   end
 
+  # Path must exist for us to use
+  if not set -q CAULDRON_GIT_REPO
+    set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
+  end
+
   if test -f $CAULDRON_PATH/data/schema.sql
     sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql 2> /dev/null
   else
@@ -102,11 +107,13 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # We should exit if CAULDRON_VERSION or LATEST_VERSION is not set or a empty string
   if test -z $CAULDRON_VERSION
+    set -UX CAULDRON_FAMILIAR suse
     familiar "Failed to pull which version of Cauldron you are on from the db :( "
     return 1
   end
 
   if test -z $LATEST_VERSION
+    set -UX CAULDRON_FAMILIAR suse
     familiar "Failed to pull the latest version of Cauldron from GitHub :( "
     return 1
   end
@@ -117,17 +124,14 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # Now we need to compare the two versions
   if test $SPLIT_LATEST_VERSION[1] -gt $SPLIT_CAULDRON_VERSION[1] || test $SPLIT_LATEST_VERSION[2] -gt $SPLIT_CAULDRON_VERSION[2] || test $SPLIT_LATEST_VERSION[3] -gt $SPLIT_CAULDRON_VERSION[3]
+    set -UX CAULDRON_FAMILIAR suse
     # We need to update
     familiar "Updating to version $LATEST_VERSION"
   else
+    set -UX CAULDRON_FAMILIAR suse
     # We are already up to date
     familiar "You are already up to date!"
     return 0;
-  end
-
-  # Path must exist for us to use
-  if not set -q CAULDRON_GIT_REPO
-    set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
   end
 
   # First we need to create a temporary directory to back up your Cauldron data folder
@@ -143,11 +147,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   mkdir -p $CAULDRON_PATH
 
   # Now we clone the latest version of the repo
-  if command -v gum > /dev/null
-    gum spin --spinner moon --title "Adding new ingredients to your cauldron..." -- fish -c "git clone $CAULDRON_GIT_REPO $CAULDRON_PATH"
-  else
-    git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
-  end
+  git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
 
   # Now we copy the data folder back
   if test -d $tmp_dir
