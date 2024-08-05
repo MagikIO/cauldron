@@ -41,7 +41,7 @@ function __cauldron_asdf_update_go -d 'Update go to the latest version'
 
         # Check if already installed
         if test $latest = (string split " " $currentGo)[2]
-            echo (badge green "ASDF") "Go is already up to date"
+            echo (badge red "ASDF") "Go is already up to date"
             return 0
         else
             # Now we prompt the user if they would like to move to this new version?
@@ -50,7 +50,7 @@ function __cauldron_asdf_update_go -d 'Update go to the latest version'
 
                 # Install the latest version of Go
                 if asdf install golang $latest_version
-                    echo (badge purple SUCCESS) "Successfully installed Go $latest_version"
+                    echo (badge red "ASDF") "Successfully installed Go $latest_version"
                 else
                     echo "Failed to install Go $latest_version" >&2
                     return 1
@@ -58,7 +58,7 @@ function __cauldron_asdf_update_go -d 'Update go to the latest version'
 
                 # Set the global version to the latest
                 if asdf global golang $latest_version
-                    echo (badge purple SUCCESS) "Go (Global) now at $latest_version"
+                    echo (badge red "ASDF") "Go (Global) now at $latest_version"
                 else
                     echo "Failed to set global Go version to $latest_version" >&2
                     return 1
@@ -67,7 +67,7 @@ function __cauldron_asdf_update_go -d 'Update go to the latest version'
                 # Check if there is a local go.mod file and set the local version
                 if test -f go.mod
                     if asdf local golang $latest_version
-                        echo (badge purple SUCCESS) "Go (Local) now at $latest_version"
+                        echo (badge red "ASDF") "Go (Local) now at $latest_version"
                     else
                         echo "Failed to set local Go version to $latest_version" >&2
                         return 1

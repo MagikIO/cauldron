@@ -26,13 +26,17 @@ function aquarium -d 'List your fishies, update your aquarium, and more'
     set -Ux AQUA__CONFIG_FILE "$AQUARIUM_INSTALL_DIR/user_theme.fish"
 
     # Flags
-    set -l options v/version h/help u/update l/list e/edit
+    set -l options v/version h/help u/update l/list e/edit p/plain
     argparse -n installs $options -- $argv
 
     # If they asked the version return it
     if set -q _flag_version
+        if set -q _flag_plain
+            echo $AQUARIUM_VERSION
+            return 0
+        end
         echo (set_color blue)$AQUARIUM_VERSION(set_color normal)
-        return
+        return 0
     end
 
     # If they asked for help return it
@@ -45,13 +49,13 @@ function aquarium -d 'List your fishies, update your aquarium, and more'
         echo "  -u, --update   Update aquarium"
         echo "  -l, --list     List installed aquariums"
         echo "  -e, --edit     Edit installed aquariums"
-        return
+        return 0
     end
 
     # If they asked to edit the theme run `save_theme -e"
     if set -q _flag_edit
         save_theme -e
-        return
+        return 0
     end
 
     # If they asked to list the functions provided via aquarium list them in a pretty way
@@ -86,7 +90,7 @@ function aquarium -d 'List your fishies, update your aquarium, and more'
         echo "" • git visual_checkout -- (set_color blue)"Choose your git branch in a nice terminal GUI"(set_color normal)
         echo "" • git gone -- (set_color blue)"Remove all the local branches that are no longer on the remote"(set_color normal)
 
-        return
+        return 0
     end
 
     # If they asked to update aquarium, first check what the most recent version is
@@ -120,6 +124,6 @@ function aquarium -d 'List your fishies, update your aquarium, and more'
         end
 
         echo "Aquarium updated to" (set_color blue)($AQUARIUM_VERSION)(set_color normal)
-        return
+        return 0
     end
 end

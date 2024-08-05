@@ -41,7 +41,7 @@ function __cauldron_asdf_update_ruby -d 'Update Ruby to the latest version'
 
         # Check if already installed
         if test $latest = (string split " " $currentRuby)[2]
-            echo (badge green "ASDF") "Ruby is already up to date"
+            echo (badge red "ASDF") "Ruby is already up to date"
             return 0
         else
             # Now we prompt the user if they would like to move to this new version?
@@ -50,7 +50,7 @@ function __cauldron_asdf_update_ruby -d 'Update Ruby to the latest version'
 
                 # Install the latest version of Ruby
                 if asdf install ruby $latest
-                    echo (badge purple SUCCESS) "Successfully installed Ruby $latest"
+                    echo (badge red "ASDF") "Successfully installed Ruby $latest"
                 else
                     echo "Failed to install Ruby $latest" >&2
                     return 1
@@ -58,7 +58,7 @@ function __cauldron_asdf_update_ruby -d 'Update Ruby to the latest version'
 
                 # Set the global version to the latest
                 if asdf global ruby $latest
-                    echo (badge purple SUCCESS) "Ruby (Global) now at $latest"
+                    echo (badge red "ASDF") "Ruby (Global) now at $latest"
                 else
                     echo "Failed to set Ruby $latest as the global version" >&2
                     return 1
@@ -67,7 +67,7 @@ function __cauldron_asdf_update_ruby -d 'Update Ruby to the latest version'
                 # Check if there is a local .ruby-version or Gemfile file and set the local version
                 if test -f .ruby-version; or test -f Gemfile
                     if asdf local ruby $latest
-                        echo (badge purple SUCCESS) "Ruby (Local) now at $latest"
+                        echo (badge red "ASDF") "Ruby (Local) now at $latest"
                     else
                         echo "Failed to set Ruby $latest as the local version" >&2
                         return 1

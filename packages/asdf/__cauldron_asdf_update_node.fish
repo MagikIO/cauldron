@@ -46,7 +46,7 @@ function __cauldron_asdf_update_node -d 'Update Node.js to the latest version'
 
         # Check if already installed
         if test $latest = (string split " " $currentNode)[2]
-            echo (badge green "ASDF") "Node.js is already up to date"
+            echo (badge red "ASDF") "Node.js is already up to date"
             return 0
         else
             # Now we prompt the user if they would like to move to this new version?
@@ -62,7 +62,7 @@ function __cauldron_asdf_update_node -d 'Update Node.js to the latest version'
 
                 # Set the global version to the latest
                 if asdf global nodejs $latest
-                    echo (badge purple SUCCESS) "Node.js (Global) now at v$latest"
+                    echo (badge red "ASDF") "Node.js (Global) now at v$latest"
                 else
                     echo "Failed to set global Node.js version to v$latest" >&2
                 end
@@ -70,7 +70,7 @@ function __cauldron_asdf_update_node -d 'Update Node.js to the latest version'
                 # Only set the local version if there is a package.json file
                 if test -f package.json
                     asdf local nodejs $latest
-                    echo (badge purple SUCCESS) "Node.js (Local) now at v$latest"
+                    echo (badge red "ASDF") "Node.js (Local) now at v$latest"
                     corepack enable
                     asdf reshim nodejs
 

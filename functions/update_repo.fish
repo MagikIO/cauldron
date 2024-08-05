@@ -76,12 +76,11 @@ function update_repo
     print_separator " System "
     echo (badge yellow "System") >>$log_file
     gum spin --spinner moon --title "Updating System..." -- "sudo apt update --fix-missing >> $log_file && sudo apt -y upgrade >> $log_file"
-    sudo apt -y autoclean >>$log_file
     echo >>$log_file
 
     print_separator " Homebrew "
     echo (badge black "Homebrew") >>$log_file
-    gum spin --spinner moon --title "Updating Homebrew..." -- "fish brew update >> $log_file && brew upgrade >> $log_file && brew cleanup >> $log_file && brew doctor >> $log_file"
+    gum spin --spinner moon --title "Updating Homebrew..." -- "fish brew update >> $log_file; and brew upgrade >> $log_file; and brew cleanup >> $log_file"
     echo >>$log_file
 
     print_separator " Yarn "
