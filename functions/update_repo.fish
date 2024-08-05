@@ -105,7 +105,7 @@ function update_repo
 
     clear
 
-    familiar "Repo is ready to go!"
+    beam-banner "Ready!"
 
     return 0
 end
