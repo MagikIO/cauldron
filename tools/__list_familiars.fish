@@ -21,4 +21,4 @@ end | fzf --preview '
     end
 ' | read -l familiar
 
-set -gx CAULDRON_FAMILIAR (string split "|" $familiar)[1]
+set -Ux CAULDRON_FAMILIAR (string split "|" $familiar)[1]
