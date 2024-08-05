@@ -40,12 +40,16 @@ function update_repo
     # Reset the log file and add a date stamp
     echo (date) >$log_file
 
+
     # Get sudo so we can update
     sudo -v
 
     # This script is designed to be run whenever VScode is opened
     # Check if aquarium is installed
     __cauldron_aquarium_update_step
+
+    print_separator " ASDF "
+    echo (badge blue "ASDF") "Updating ASDF" >>$log_file
 
     # Make sure we know their preferred node packman
     choose_packman -s
@@ -55,22 +59,29 @@ function update_repo
         __cauldron_asdf_update_step
     end
 
+    print_separator " Git "
+    echo (badge purple "Git") "Updating the repository" >>$log_file
     git fetch
-
-    print_separator "🌳 Choose what branch you'd like to work on 🌳"
     git visual-checkout
+    echo (badge purple "Git") "Moved to branch '"(bold (git branch --show-current))"'"
     git pull
-
-    print_separator "✂️ Trimming unneeded branches ✂️"
+    echo (badge purple "Git") "Grabbed most recent changes from remote"
     git gone
+    echo (badge purple "Git") "Trimmed unneeded branches for you"
 
-    print_separator "🆙 Updating your system & your brews ⚗️"
-    gum spin --spinner moon --title "Updating System..." -- fish -c "$CAULDRON_PATH/update/__cauldron_system_update_step.fish"
+    print_separator " System "
+    echo (badge yellow "System") "Updating the system" >>$log_file
+    sudo -v
+    gum spin --spinner moon --title "Updating System..." -- "sudo apt update --fix-missing >> $log_file && sudo apt -y upgrade >> $log_file"
 
+    print_separator " Homebrew "
+    echo (badge pink "Homebrew") "Updating Homebrew" >>$log_file
+    gum spin --spinner moon --title "Updating Homebrew..." -- "brew update >> $log_file && brew upgrade >> $log_file && brew cleanup >> $log_file && brew doctor >> $log_file"
+
+    print_separator " Yarn "
+    echo (badge green "Yarn") "Updating Yarn and local dependencies" >>$log_file
     # Update Yarn and local dependencies
-    gum spin --spinner moon --title "Updating node_modules..." -- fish -c "yarn && yarn up"
-
-    print_separator "🧶 Upgrading dependencies 🧶"
+    gum spin --spinner moon --title "Installing the most recent version of the your modules from remote..." -- fish -c "yarn install --frozen-lockfile >> $log_file"
     yarn upgrade-interactive
 
     return 0
