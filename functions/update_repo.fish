@@ -75,7 +75,8 @@ function update_repo
 
     print_separator " System "
     echo (badge yellow "System") >>$log_file
-    gum spin --spinner moon --title "Updating System..." -- "fish -c __cauldron_system_update_step >> $log_file"
+    __cauldron_system_update_step
+    cat $CAULDRON_PATH/logs/system_update.txt >>$log_file
     echo >>$log_file
 
     print_separator " Homebrew "

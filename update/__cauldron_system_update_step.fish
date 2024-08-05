@@ -25,9 +25,16 @@ function __cauldron_system_update_step -d 'Update the system using apt'
         return 0
     end
 
+    # Create a log file to pipe the output to
+    mkdir -p $CAULDRON_PATH/logs
+    set log_file $CAULDRON_PATH/logs/system_update.txt
+    touch $log_file
+
+    echo >$log_file
+
     # Update the system
-    sudo apt update
-    sudo apt upgrade -y
+    gum spin --spinner moon --title "Updating System..." -- sudo apt update -y >>$log_file
+    gum spin --spinner moon --title "Upgrading System..." -- sudo apt upgrade -y >>$log_file
 
     return 0
 end
