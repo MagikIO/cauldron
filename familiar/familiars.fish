@@ -32,7 +32,7 @@ function familiars
   end
 
   if not set -q _flag_rename
-    $CAULDRON_INTERNAL_TOOLS/__list_familiars.fish
+    $CAULDRON_PATH/tools/__list_familiars.fish
   end
 
   # We will use the `new-name` fish function which returns a first and last name,
