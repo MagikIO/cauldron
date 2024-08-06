@@ -72,11 +72,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     end
   end
 
-  # Path must exist for us to use
-  if not set -q CAULDRON_GIT_REPO
-    set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
-  end
-
   if test -f $CAULDRON_PATH/data/schema.sql
     sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql 2> /dev/null
   else
