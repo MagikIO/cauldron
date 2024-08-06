@@ -32,14 +32,14 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
 
     # if they choose the create_config option, create a config file
     if set -q _flag_C; or set -q _flag_create_config
-      # See if the f-says command is avail
-      if command -q f-says
+      # See if the f-says functions is avail
+      if functions -q f-says
           f-says "Creating a config file"
       else
           echo "Creating a config file"
       end
 
-      mkdir =p ~/.config/magik
+      mkdir -p ~/.config/magik
       touch ~/.config/magik/conf.json
 
       # Fetch Git configuration
@@ -47,29 +47,30 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
       set git_email (git config --get user.email)
 
       # Create the JSON content
-      echo "{\n" \
-      > "  \"author\": {\n" \
-      > "    \"name\": \"$git_name\",\n" \
-      > "    \"email\": \"$git_email\"\n" \
-      > "  },\n" \
-      > "  \"scripts\": {\n" \
-      > "    \"iterate\": \"iterate\"\n" \
-      > "  }\n" \
-      > "}" > ~/.config/magik/conf.json
+      echo "{
+        \"author\": {
+          \"name\": \"$git_name\",
+          \"email\": \"$git_email\"
+        },
+        \"scripts\": {
+          \"iterate\": \"iterate\"
+        }
+      }" > ~/.config/magik/conf.json
 
       # Check if the styled-banner command is avail
-      if command -q styled-banner
+      if functions -q styled-banner
           styled-banner "Created!"
       else
           echo "Config file created"
       end
 
       set -gx AQUA__NODE_INIT_CONFIG ~/.config/magik/conf.json
+      code $AQUA__NODE_INIT_CONFIG
       return 0
     end
 
     # Check if the f-says command is avail
-    if command -q f-says
+    if functions -q f-says
         f-says "Initializing a Node.js project for you.."
     else
         echo "Initializing a Node.js project for you.."
@@ -94,7 +95,7 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     # If the user passes a config (JSON) file, read it and set the values
     if set -q _flag_c; or set -q _flag_config
       # Check if the fays command is avail
-      if command -q f-says
+      if functions -q f-says
           f-says "Using the following page from your grimoire (config file): $_config_file"
       else
         # Style the name of the config file
@@ -164,7 +165,7 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
         set node_linker_pref $CAULDRON_NODE_LINKER_PREF
     else
         # Check if f-says is avail
-        if command -q f-says
+        if functions -q f-says
             f-says "Would you like to use the node-modules or pnp mode for your node-modules?"
         else
             echo "Would you like to use the node-modules or pnp node-linker?"
@@ -194,21 +195,22 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     # }
     if not test -e .yarnrc.yml
         echo "Creating .yarnrc.yml file"
-        echo "initFields:" >>.yarnrc.yml
-        if set -q name; and not test -z $name
-            echo "  name: \"$name\"" >>.yarnrc.yml
-        end
-
         if set -q node_linker_pref; and not test -z $node_linker_pref
-            echo "  node-linker: $node_linker_pref" >>.yarnrc.yml
+          echo "nodeLinker: $node_linker_pref" >>.yarnrc.yml
         end
 
-        if set -q description; and not test -z $description
-            echo "  description: $description" >>.yarnrc.yml
-        end
+        if set -q name; or set -q description; or set -q license
+            echo "initFields:" >>.yarnrc.yml
+            if set -q name; and not test -z $name
+                echo "  name: \"$name\"" >>.yarnrc.yml
+            end
+            if set -q description; and not test -z $description
+                echo "  description: $description" >>.yarnrc.yml
+            end
 
-        if set -q license; and not test -z $license
-            echo "  license: $license" >>.yarnrc.yml
+            if set -q license; and not test -z $license
+                echo "  license: $license" >>.yarnrc.yml
+            end
         end
     end
 
@@ -233,17 +235,14 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
         yarn dlx @yarnpkg/sdks vscode
     end
 
-    # Init Typescript
-    tsc --init
-
     # Create a preferred folder structure
     mkdir -p src
     mkdir -p test
     mkdir -p dist
 
     # Remove the last line of the package.json file, and add a comma to the end of the last line
-    sed -i '$ d' package.json
-    sed -i '$ s/$/,/' package.json
+    sed -i '$ d' ./package.json
+    sed -i '$ s/$/,/' ./package.json
 
     # Add scripts if they exist
     # Scripts have the following formatting:
@@ -408,8 +407,11 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     echo "  ...new LintGolem({ rootDir: __dirname, tsconfigPaths: 'tsconfig.json' }).config" >>eslint.config.js
     echo ");" >>eslint.config.js
 
-    # Check if the f-says command is avail
-    if command -q f-says
+    # Init Typescript
+    yarn tsc --init
+
+    # Check if the f-says functions is avail
+    if functions -q f-says
         styled-banner "Project Ready!"
     else
       print_separator "Project initialized"
