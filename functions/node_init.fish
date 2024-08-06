@@ -295,7 +295,11 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
         echo "    {" >>package.json
         echo "      \"name\": \"$author_name\"," >>package.json
         if not test -z $author_email
-            echo "      \"email\": \"$author_email\"," >>package.json
+            if test -z $author_github
+                echo "      \"email\": \"$author_email\"" >>package.json
+            else
+              echo "      \"email\": \"$author_email\"," >>package.json
+            end
         end
         if not test -z $author_github
             echo "      \"github\": \"$author_github\"" >>package.json
