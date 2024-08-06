@@ -4,7 +4,7 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
     set -l func_version "2.1.0"
     
     # Define options that can be passed
-    set -l options "v/version" "h/help" "n/name" "d/description" "a/author" "s/scope" "l/license" "c/config" "C/create_config"
+    set -l options "v/version" "h/help" "n/name" "d/description" "a/author" "s/scope" "l/license" "c/config=" "C/create_config"
     argparse -n node_init $options -- $argv
 
     # If the for version return the version
@@ -64,7 +64,7 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
           echo "Config file created"
       end
 
-      set -gx AQUA__NODE_INIT_CONFIG ~/.config/magik/conf.json
+      set -Ux AQUA__NODE_INIT_CONFIG ~/.config/magik/conf.json
       code $AQUA__NODE_INIT_CONFIG
       return 0
     end
@@ -214,7 +214,6 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
         end
     end
 
-
     # Move to newest version
     yarn set version stable
 
@@ -228,6 +227,9 @@ function node_init -d 'Initialize a Node.js project with Yarn and Typescript'
 
     # Add minimum dependencies
     yarn add -D typescript @types/node eslint typescript typescript-eslint @magik_io/lint_golem
+
+    # wait for the yarn add to finish
+    wait $last_pid
     
     # If they choose to use pnp, we should add in the yarn sdks for them
     if test $node_linker_pref = "pnp"
