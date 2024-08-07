@@ -29,7 +29,7 @@ function hamsa -d "Uses grep to search recursively for a string in a directory, 
     end
 
     # Check if fzf is installed
-    if not command -v fzf > /dev/null
+    if not command -v fzf >/dev/null
         echo "fzf is required for this function to work"
         return 1
     end
@@ -40,19 +40,23 @@ function hamsa -d "Uses grep to search recursively for a string in a directory, 
         return 1
     end
 
-    # Check if the directory is empty
-    if test -z .
-        echo "Please provide a directory"
-        return 1
-    end
+    set -l temp_file (mktemp)
 
     # Search for the string in the directory
-    set -l results (grep -rn --binary-files=without-match $search_string .)
+    grep -rn --binary-files=without-match $search_string . >$temp_file
+
+    # Initialize an empty list to store results
+    set -l results
+
+    # Read the contents of the temporary file line by line
+    while read -l line
+        set results $results $line
+    end <$temp_file
 
     # Check if there are any results
     if test (count $results) -eq 0
-      echo "No results found"
-      return 1
+        echo "No results found"
+        return 1
     end
 
     # Show the results using fzf preview
