@@ -74,15 +74,32 @@ function __cauldron_asdf_update_node -d 'Update Node.js to the latest version'
                     corepack enable
                     asdf reshim nodejs
 
-                    yarn set version stable
-                    asdf reshim nodejs
+                    # Update the package manager
+                    # Check out nodejs package manager preference via $cauldron_node_packman_pref
+                    if test $cauldron_node_packman_pref = pnpm
+                        corepack enable pnpm
+                        corepack use pnpm@latest
+                        asdf reshim nodejs
+                        pnpm add tsx@latest -g
+                        # Rebuild the packages list to ensure everything is up to date
+                        pnpm i
+                    else if test $cauldron_node_packman_pref = yarn
+                        corepack enable yarn
+                        yarn set version stable
+                        asdf reshim nodejs
+                        npm i tsx@latest -g
 
-                    # Add back compatibility layers
-                    npm i tsx@latest -g
-                    asdf reshim nodejs
+                        # Rebuild the packages list to ensure everything is up to date
+                        yarn
+                    else if test $cauldron_node_packman_pref = npm
+                        npm i npm@latest -g
+                        npm i tsx@latest -g
+                        asdf reshim nodejs
+                        # Rebuid the packages list to ensure everything is up to date
+                        npm i
+                    end
 
-                    # Rebuild the packages list to ensure everything is up to date
-                    yarn
+
                 end
             end
         end
