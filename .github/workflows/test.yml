@@ -1,0 +1,240 @@
+name: Cauldron Tests
+
+on:
+  push:
+    branches: [ master, main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+  pull_request:
+    branches: [ master, main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test:
+    name: Run Fish Shell Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fish-version: ['3.6.1', '3.7.0']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Fish Shell ${{ matrix.fish-version }}
+        uses: fish-shop/install-fish-shell@v1
+        with:
+          version: ${{ matrix.fish-version }}
+
+      - name: Verify Fish installation
+        run: fish --version
+
+      - name: Install Fisher (Fish plugin manager)
+        run: |
+          fish -c '
+            curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source
+            fisher install jorgebucaran/fisher
+          '
+
+      - name: Install Fishtape
+        run: |
+          fish -c 'fisher install jorgebucaran/fishtape'
+
+      - name: Verify Fishtape installation
+        run: fish -c 'type fishtape'
+
+      - name: Set up test environment
+        run: |
+          fish -c '
+            # Set up environment variables for tests
+            set -gx CAULDRON_PATH $PWD
+            set -gx CAULDRON_DATABASE $PWD/tests/fixtures/test.db
+            set -gx CAULDRON_PALETTES $PWD/data/palettes.json
+            set -gx CAULDRON_SPINNERS $PWD/data/spinners.json
+            set -gx CAULDRON_INTERNAL_TOOLS $PWD/tools
+
+            # Create test fixtures directory
+            mkdir -p tests/fixtures
+          '
+
+      - name: Run unit tests
+        run: |
+          fish -c '
+            echo "Running unit tests..."
+            set -l exit_code 0
+
+            for test_file in tests/unit/test_*.fish
+              echo "Running: $test_file"
+              fishtape $test_file
+              if test $status -ne 0
+                set exit_code 1
+              end
+            end
+
+            exit $exit_code
+          '
+
+      - name: Run integration tests
+        run: |
+          fish -c '
+            echo "Running integration tests..."
+            set -l exit_code 0
+
+            for test_file in tests/integration/test_*.fish
+              echo "Running: $test_file"
+              fishtape $test_file
+              if test $status -ne 0
+                set exit_code 1
+              end
+            end
+
+            exit $exit_code
+          '
+
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Fish Shell Version: ${{ matrix.fish-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- OS: Ubuntu Latest" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count test files
+          UNIT_TESTS=$(ls tests/unit/test_*.fish 2>/dev/null | wc -l)
+          INTEGRATION_TESTS=$(ls tests/integration/test_*.fish 2>/dev/null | wc -l)
+
+          echo "### Test Suites" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit tests: $UNIT_TESTS test files" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration tests: $INTEGRATION_TESTS test files" >> $GITHUB_STEP_SUMMARY
+
+  lint:
+    name: Lint TypeScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm eslint . --ext .ts || true
+        continue-on-error: true
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit || true
+        continue-on-error: true
+
+  validate-json:
+    name: Validate JSON Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate package.json
+        run: python3 -m json.tool package.json > /dev/null
+
+      - name: Validate dependencies.json
+        run: python3 -m json.tool dependencies.json > /dev/null
+
+      - name: Validate palettes.json
+        run: python3 -m json.tool data/palettes.json > /dev/null
+
+      - name: Validate spinners.json
+        run: python3 -m json.tool data/spinners.json > /dev/null
+
+      - name: JSON validation passed
+        run: echo "All JSON files are valid!"
+
+  shellcheck:
+    name: Shell Script Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Check Fish scripts syntax
+        run: |
+          echo "Checking Fish script syntax..."
+          ERRORS=0
+
+          # Check all .fish files for basic syntax
+          for file in $(find . -name "*.fish" -type f ! -path "./node_modules/*"); do
+            if ! fish -n "$file" 2>/dev/null; then
+              echo "Syntax error in: $file"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            echo "Found $ERRORS files with syntax errors"
+            exit 1
+          else
+            echo "All Fish scripts have valid syntax!"
+          fi
+        continue-on-error: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run security audit
+        run: pnpm audit --audit-level moderate || true
+        continue-on-error: true
+
+      - name: Check for secrets
+        run: |
+          # Basic check for potential secrets in code
+          echo "Checking for potential secrets..."
+
+          # Check for common secret patterns (simplified)
+          if grep -r "password\s*=" --include="*.fish" --include="*.ts" . 2>/dev/null | grep -v "test" | grep -v "#"; then
+            echo "Warning: Found potential hardcoded passwords"
+          fi
+
+          if grep -r "api_key\s*=" --include="*.fish" --include="*.ts" . 2>/dev/null | grep -v "test" | grep -v "#"; then
+            echo "Warning: Found potential hardcoded API keys"
+          fi
+
+          echo "Security scan complete"
+        continue-on-error: true

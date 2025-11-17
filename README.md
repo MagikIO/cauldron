@@ -84,7 +84,7 @@ cauldron --help                                 # View all commands
 - **Git**
 - **curl**
 - **Node.js** v22+ (recommended)
-- **Yarn** v4+ (optional, for development)
+- **pnpm** v9+ (optional, for development)
 
 ### Standard Installation
 
@@ -304,7 +304,7 @@ familiar -h
 ### Recommended
 
 - **Node.js**: v22.9.0 (for TypeScript components)
-- **Yarn**: v4.3.1 (for dependency management)
+- **pnpm**: v9+ (for dependency management)
 - **SQLite3**: For database features
 - **fzf**: For fuzzy finding and search
 - **bat**: For syntax-highlighted file viewing
@@ -387,14 +387,37 @@ git clone https://github.com/MagikIO/cauldron.git
 cd cauldron
 
 # Install dependencies
-yarn install
+pnpm install
 
 # Run TypeScript components
-yarn run
+pnpm run
 
 # Lint code
-yarn lint
+pnpm lint
+
+# Run tests
+./tests/run_tests.fish
 ```
+
+### Testing
+
+Cauldron uses [Fishtape](https://github.com/jorgebucaran/fishtape) for testing Fish shell functions. Tests are automatically run via GitHub Actions on every push and pull request.
+
+```bash
+# Install test dependencies
+./tests/setup.fish
+
+# Run all tests
+./tests/run_tests.fish
+
+# Run unit tests only
+./tests/run_tests.fish --unit
+
+# Run integration tests only
+./tests/run_tests.fish --integration
+```
+
+See [tests/README.md](tests/README.md) for comprehensive testing documentation.
 
 ### Code Style
 
