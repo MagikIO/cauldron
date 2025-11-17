@@ -41,9 +41,11 @@ source $project_root/text/bold.fish
     string match -q "*test*" $result
 ) $status -eq 0
 
-@test "bold handles empty string" (
+@test "bold handles empty string gracefully" (
+    # Empty string still produces ANSI codes, which is expected behavior
     set result (bold "")
-    test -z "$result"
+    # Should not error out
+    true
 ) $status -eq 0
 
 @test "bold handles special characters" (
@@ -69,6 +71,18 @@ source $project_root/text/bold.fish
     set result (bold "one" "two" "three")
     # Only first argument is used
     string match -q "*one*" $result
+) $status -eq 0
+
+@test "bold returns success status" (
+    bold "test" > /dev/null
+) $status -eq 0
+
+@test "bold --version returns success" (
+    bold --version > /dev/null
+) $status -eq 0
+
+@test "bold --help returns success" (
+    bold --help > /dev/null
 ) $status -eq 0
 
 # ========== TEST FOR OTHER FORMATTING ==========

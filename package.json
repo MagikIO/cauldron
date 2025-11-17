@@ -3,9 +3,9 @@
   "version": "0.3.1",
   "description": "With the help of your beloved familiar, become an arcane master of the cauldron",
   "engines": {
-    "node": "22",
-    "yarn": "4.3.1"
+    "node": "22"
   },
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "run": "tsx node/index.ts",
     "changelog": "git cliff --unreleased --prepend CHANGELOG.md"

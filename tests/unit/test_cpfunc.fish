@@ -37,22 +37,25 @@ source $project_root/functions/cpfunc.fish
     cpfunc -h | grep -q "Usage:"
 ) $status -eq 0
 
-# Test: Error handling
+# Test: Error handling - missing arguments
 @test "cpfunc without arguments returns error" (
-    cpfunc 2>&1 | grep -q "must provide"
+    set output (cpfunc 2>&1)
+    string match -q "*must provide*" $output
 ) $status -eq 0
 
+# Test: Error handling - flag before path
 @test "cpfunc with flag first returns error" (
-    cpfunc -d 2>&1 | grep -q "must provide"
+    set output (cpfunc -d 2>&1)
+    string match -q "*must provide*" $output
 ) $status -eq 0
 
 # Test: Directory validation
 @test "cpfunc -d with non-directory returns error" (
     set temp_file (mktemp)
-    cpfunc $temp_file -d 2>&1 | grep -q "not a directory"
-    set result $status
+    set output (cpfunc $temp_file -d 2>&1)
+    set has_error (string match -q "*not a directory*" $output; and echo "yes"; or echo "no")
     rm -f $temp_file
-    test $result -eq 0
+    test "$has_error" = "yes"
 ) $status -eq 0
 
 # Test: File copying (using temp directory)
@@ -72,13 +75,16 @@ source $project_root/functions/cpfunc.fish
     cpfunc $test_func 2>/dev/null
 
     # Check file was copied
-    set copied (test -f $HOME/.config/fish/functions/test_func.fish)
+    set copied "no"
+    if test -f $HOME/.config/fish/functions/test_func.fish
+        set copied "yes"
+    end
 
     # Cleanup
     set -gx HOME $original_home
     rm -rf $temp_dir
 
-    test $copied -eq 0
+    test "$copied" = "yes"
 ) $status -eq 0
 
 @test "cpfunc makes file executable" (
@@ -98,11 +104,38 @@ source $project_root/functions/cpfunc.fish
     cpfunc $test_func 2>/dev/null
 
     # Check original is now executable
-    set is_exec (test -x $test_func)
+    set is_exec "no"
+    if test -x $test_func
+        set is_exec "yes"
+    end
 
     # Cleanup
     set -gx HOME $original_home
     rm -rf $temp_dir
 
-    test $is_exec -eq 0
+    test "$is_exec" = "yes"
+) $status -eq 0
+
+@test "cpfunc extracts function name correctly" (
+    set temp_dir (mktemp -d)
+    set test_func "$temp_dir/my_custom_function.fish"
+
+    echo 'function my_custom_function; end' > $test_func
+
+    set original_home $HOME
+    set -gx HOME $temp_dir
+    mkdir -p $HOME/.config/fish/functions
+
+    cpfunc $test_func 2>/dev/null
+
+    # Should create my_custom_function.fish, not the full path
+    set correct_name "no"
+    if test -f $HOME/.config/fish/functions/my_custom_function.fish
+        set correct_name "yes"
+    end
+
+    set -gx HOME $original_home
+    rm -rf $temp_dir
+
+    test "$correct_name" = "yes"
 ) $status -eq 0
