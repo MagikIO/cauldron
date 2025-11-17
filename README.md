@@ -394,7 +394,30 @@ yarn run
 
 # Lint code
 yarn lint
+
+# Run tests
+./tests/run_tests.fish
 ```
+
+### Testing
+
+Cauldron uses [Fishtape](https://github.com/jorgebucaran/fishtape) for testing Fish shell functions. Tests are automatically run via GitHub Actions on every push and pull request.
+
+```bash
+# Install test dependencies
+./tests/setup.fish
+
+# Run all tests
+./tests/run_tests.fish
+
+# Run unit tests only
+./tests/run_tests.fish --unit
+
+# Run integration tests only
+./tests/run_tests.fish --integration
+```
+
+See [tests/README.md](tests/README.md) for comprehensive testing documentation.
 
 ### Code Style
 
