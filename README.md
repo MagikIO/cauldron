@@ -34,6 +34,10 @@ Cauldron is a comprehensive Fish Shell utility suite that enhances your terminal
 - **Interactive AI Assistant**: Get help from your terminal companion
 - **LLM Integration**: Query the llama3.2 model directly from your shell
 - **Smart Code Search**: Find and preview code with intelligent suggestions
+- **🧠 Context Awareness**: Familiar remembers conversations and understands your projects
+- **💾 Conversation Memory**: Persistent history across sessions with recall and search
+- **⚙️ User Preferences**: Learns your coding style and project-specific preferences
+- **🗂️ Project Detection**: Automatically detects languages, frameworks, and package managers
 
 ### 🎨 Rich Terminal UI
 - **Visual Components**: Boxes, badges, spinners, and progress indicators
@@ -167,14 +171,39 @@ Cauldron uses these environment variables:
 ### AI & Search
 
 ```bash
-# Query the AI model
+# Query the AI model (now with context awareness!)
 ask "Explain the difference between map and forEach in JavaScript"
+
+# Ask follow-up questions (remembers conversation history)
+ask "Which one should I use for this project?"
 
 # Search code with live preview
 hamsa "authentication"
 
 # Get help from your familiar
 familiar "How do I optimize this database query?"
+```
+
+### Memory & Context
+
+```bash
+# View conversation history
+recall                    # Last 10 conversations from current session
+recall -a -l 20          # Last 20 from all sessions
+recall -s "typescript"   # Search conversations
+
+# Save preferences
+remember coding_style "functional programming, immutability"
+remember test_framework "vitest"
+remember --list          # View all saved preferences
+
+# Project context
+context                  # View current project context
+context -u               # Update project context in database
+
+# Manage memory
+forget -p coding_style   # Remove a preference
+forget -s                # Clear session history
 ```
 
 ### Package Management
@@ -265,6 +294,8 @@ visual_git_checkout
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design
 - **[API.md](docs/API.md)** - Complete function reference
 - **[FAMILIAR.md](docs/FAMILIAR.md)** - AI companion guide
+- **[MEMORY_SYSTEM.md](docs/MEMORY_SYSTEM.md)** - 🆕 Context awareness & memory features
+- **[MEMORY_SYSTEM_QUICKSTART.md](docs/MEMORY_SYSTEM_QUICKSTART.md)** - 🆕 5-minute quick start guide
 
 ### Function-Specific Documentation
 
