@@ -38,8 +38,12 @@ source $project_root/functions/cpfunc.fish
 ) $status -eq 0
 
 # Test: Error handling - missing arguments
+# Note: The function uses -a flag which sets path_to_function even when empty
+# This causes basename error before the proper error check
 @test "cpfunc without arguments returns error" (
+    # Suppress stderr (basename error), check for the actual error message
     set output (cpfunc 2>&1)
+    # Should contain the proper error message
     string match -q "*must provide*" $output
 ) $status -eq 0
 
@@ -138,4 +142,30 @@ source $project_root/functions/cpfunc.fish
     rm -rf $temp_dir
 
     test "$correct_name" = "yes"
+) $status -eq 0
+
+# Test: Handling of relative paths
+@test "cpfunc handles relative paths" (
+    set temp_dir (mktemp -d)
+    set original_pwd (pwd)
+    cd $temp_dir
+
+    echo 'function relative_test; end' > relative_test.fish
+
+    set original_home $HOME
+    set -gx HOME $temp_dir
+    mkdir -p $HOME/.config/fish/functions
+
+    cpfunc relative_test.fish 2>/dev/null
+
+    set has_file "no"
+    if test -f $HOME/.config/fish/functions/relative_test.fish
+        set has_file "yes"
+    end
+
+    set -gx HOME $original_home
+    cd $original_pwd
+    rm -rf $temp_dir
+
+    test "$has_file" = "yes"
 ) $status -eq 0
