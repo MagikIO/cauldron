@@ -20,24 +20,41 @@ function __save_preference -d "Save a user preference to the database" -a key va
         return 1
     end
 
-    # If project_path is not provided, it's a global preference (NULL)
-    set -l project_clause "NULL"
-    if test -n "$project_path"
-        set project_clause "'$project_path'"
-    end
-
     # Escape single quotes for SQL
     set key (string replace -a "'" "''" $key)
     set value (string replace -a "'" "''" $value)
 
-    # Insert or update preference
-    sqlite3 $CAULDRON_DATABASE "
-        INSERT INTO user_preferences (preference_key, preference_value, project_path, created_at, updated_at)
-        VALUES ('$key', '$value', $project_clause, strftime('%s', 'now'), strftime('%s', 'now'))
-        ON CONFLICT(preference_key, project_path) DO UPDATE SET
-            preference_value = '$value',
-            updated_at = strftime('%s', 'now');
-    " 2>/dev/null
+    # Handle NULL project_path specially because SQLite treats NULL != NULL in UNIQUE constraints
+    if test -z "$project_path"
+        # For global preferences (project_path IS NULL), use separate logic
+        # First try to update existing preference
+        sqlite3 $CAULDRON_DATABASE "
+            UPDATE user_preferences
+            SET preference_value = '$value', updated_at = strftime('%s', 'now')
+            WHERE preference_key = '$key' AND project_path IS NULL;
+        " 2>/dev/null
+
+        # Check if any rows were updated
+        set -l changes (sqlite3 $CAULDRON_DATABASE "SELECT changes();" 2>/dev/null)
+
+        # If no rows were updated, insert new preference
+        if test "$changes" = "0"
+            sqlite3 $CAULDRON_DATABASE "
+                INSERT INTO user_preferences (preference_key, preference_value, project_path, created_at, updated_at)
+                VALUES ('$key', '$value', NULL, strftime('%s', 'now'), strftime('%s', 'now'));
+            " 2>/dev/null
+        end
+    else
+        # For project-specific preferences, ON CONFLICT works fine
+        set project_path (string replace -a "'" "''" $project_path)
+        sqlite3 $CAULDRON_DATABASE "
+            INSERT INTO user_preferences (preference_key, preference_value, project_path, created_at, updated_at)
+            VALUES ('$key', '$value', '$project_path', strftime('%s', 'now'), strftime('%s', 'now'))
+            ON CONFLICT(preference_key, project_path) DO UPDATE SET
+                preference_value = '$value',
+                updated_at = strftime('%s', 'now');
+        " 2>/dev/null
+    end
 
     if test $status -eq 0
         return 0
