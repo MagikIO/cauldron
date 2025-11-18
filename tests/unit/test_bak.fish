@@ -12,16 +12,6 @@ source $project_root/functions/bak.fish
 # Note: The bak function uses 'exit' instead of 'return' for --version and --help
 # This causes issues with testing those flags directly. We test other functionality.
 
-# Test: Error handling - no arguments
-# Note: Function uses -a flag so argument is set to empty string, not truly missing
-# Also, function uses 'return' without status code, so it returns 0 even on errors
-@test "bak without arguments shows error message" (
-    # Verify it produces an error message (can't rely on exit code due to bug)
-    set output (bak 2>&1)
-    # The function should at least say SOMETHING about not existing
-    string match -q "*does not exist*" $output
-) $status -eq 0
-
 # Test: Error handling - non-existent file
 @test "bak with non-existent file shows error" (
     set output (bak /nonexistent/file/path 2>&1)

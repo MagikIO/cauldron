@@ -42,7 +42,7 @@ function cpfunc -d 'Copy a function to the fish functions directory and source i
     end
 
     # If they didn't provide a path to the function then return an error
-    if not set -q path_to_function
+    if not set -q path_to_function; or test -z "$path_to_function"
         echo "You must provide a path to the function or function(s) to copy"
         return 1
     end

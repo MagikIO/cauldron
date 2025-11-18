@@ -1,12 +1,22 @@
 #!/usr/bin/env fish
 
-function __get_preference -d "Get a user preference from the database" -a key project_path
+function __get_preference -d "Get a user preference from the database" -a key default_value project_path
     # Check dependencies
     if not set -q CAULDRON_DATABASE
+        # Return default if provided
+        if test -n "$default_value"
+            echo $default_value
+            return 0
+        end
         return 1
     end
 
     if not command -q sqlite3
+        # Return default if provided
+        if test -n "$default_value"
+            echo $default_value
+            return 0
+        end
         return 1
     end
 
@@ -45,6 +55,11 @@ function __get_preference -d "Get a user preference from the database" -a key pr
         echo $value
         return 0
     else
+        # Return default value if provided
+        if test -n "$default_value"
+            echo $default_value
+            return 0
+        end
         return 1
     end
 end
