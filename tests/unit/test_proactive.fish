@@ -21,7 +21,7 @@ sqlite3 "$CAULDRON_DATABASE" < "$project_root/data/proactive_schema.sql" 2>/dev/
 # Create test session
 sqlite3 "$CAULDRON_DATABASE" "
     INSERT INTO sessions (session_id, started_at, working_directory, shell_pid)
-    VALUES ('$CAULDRON_SESSION_ID', strftime('%s', 'now'), '/tmp', $$);
+    VALUES ('$CAULDRON_SESSION_ID', strftime('%s', 'now'), '/tmp', $fish_pid);
 " 2>/dev/null
 
 # Source the functions
