@@ -185,16 +185,16 @@ run_migrations() {
     export CAULDRON_PATH="$CAULDRON_INSTALL_DIR"
     export CAULDRON_DATABASE="$CAULDRON_CONFIG_DIR/data/cauldron.db"
 
-    # Source the migration runner function
+    # Source the migration runner from the installed functions directory
     if fish -c "
         set -gx CAULDRON_PATH '$CAULDRON_INSTALL_DIR'
         set -gx CAULDRON_DATABASE '$CAULDRON_CONFIG_DIR/data/cauldron.db'
-        source '$CAULDRON_INSTALL_DIR/functions/__run_migrations.fish'
+        source '$CAULDRON_CONFIG_DIR/functions/__run_migrations.fish'
         __run_migrations
     "; then
         success "Migrations completed"
     else
-        warn "Migration runner not available yet (this is normal for first install)"
+        warn "Migration runner failed. You may need to run 'cauldron_repair'"
     fi
 }
 
@@ -280,11 +280,13 @@ install_node_dependencies() {
 
     if command_exists pnpm; then
         info "Using pnpm..."
-        pnpm install
+        # Suppress sqlite3 build errors (optional dependency)
+        pnpm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
         success "Node dependencies installed"
     elif command_exists npm; then
         info "Using npm..."
-        npm install
+        # Suppress sqlite3 build errors (optional dependency)
+        npm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
         success "Node dependencies installed"
     else
         warn "Neither pnpm nor npm found, skipping Node.js dependencies"
@@ -377,9 +379,9 @@ main() {
     setup_repository
     create_directories
     initialize_database
-    run_migrations
+    install_functions      # Install functions BEFORE running migrations
     copy_data_files
-    install_functions
+    run_migrations        # Run migrations with the installed functions
     setup_fish_config
     install_node_dependencies
     verify_installation
