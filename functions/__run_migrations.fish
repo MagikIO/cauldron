@@ -111,13 +111,13 @@ function __run_migrations --description "Run database migrations with backup and
 
     for migration_file in (ls "$migrations_dir"/*.sql | sort)
         set -l filename (basename "$migration_file")
-        set -l version (string match -r '^(\d+)_' "$filename" | string split '_' | head -n 1)
+        set -l migration_version (string match -r '^(\d+)_' "$filename" | string split '_' | head -n 1)
 
-        if test -z "$version"
+        if test -z "$migration_version"
             continue
         end
 
-        if test "$version" -gt "$current_version"
+        if test "$migration_version" -gt "$current_version"
             set -a pending_migrations "$migration_file"
         end
     end
@@ -146,7 +146,7 @@ function __run_migrations --description "Run database migrations with backup and
     # Apply each migration
     for migration in $pending_migrations
         set -l filename (basename "$migration")
-        set -l version (string match -r '^(\d+)_' "$filename" | string split '_' | head -n 1)
+        set -l migration_version (string match -r '^(\d+)_' "$filename" | string split '_' | head -n 1)
         set -l name (string replace -r '^\d+_(.+)\.sql$' '$1' "$filename")
 
         echo -n "Applying $filename... "
@@ -158,7 +158,7 @@ function __run_migrations --description "Run database migrations with backup and
         if sqlite3 "$db_path" < "$migration" 2>/dev/null
             # Record migration
             sqlite3 "$db_path" "INSERT OR REPLACE INTO schema_migrations (version, name, applied_at, checksum)
-                               VALUES ($version, '$name', strftime('%s', 'now'), '$checksum');"
+                               VALUES ($migration_version, '$name', strftime('%s', 'now'), '$checksum');"
 
             echo "✓ Success"
         else
