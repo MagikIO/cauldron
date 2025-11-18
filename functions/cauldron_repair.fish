@@ -1,0 +1,272 @@
+function cauldron_repair --description "Repair broken Cauldron installation"
+    set -l func_version "1.0.0"
+    set -l options h/help v/verify-only f/fix-all
+
+    argparse -n cauldron_repair $options -- $argv
+    or return 1
+
+    if set -q _flag_help
+        echo "Usage: cauldron_repair [OPTIONS]"
+        echo ""
+        echo "Detect and fix issues with Cauldron installation"
+        echo ""
+        echo "Options:"
+        echo "  -h, --help         Show this help"
+        echo "  -v, --verify-only  Only check for issues, don't fix"
+        echo "  -f, --fix-all      Automatically fix all detected issues"
+        echo ""
+        echo "Examples:"
+        echo "  cauldron_repair                # Interactive repair"
+        echo "  cauldron_repair --verify-only  # Only check for issues"
+        echo "  cauldron_repair --fix-all      # Auto-fix everything"
+        return 0
+    end
+
+    echo "🔧 Cauldron Repair System"
+    echo ""
+
+    set -l issues_found 0
+    set -l issues_fixed 0
+    set -l issues ()
+
+    # Check 1: Verify CAULDRON_PATH exists
+    echo "→ Checking installation directory..."
+    if not test -d "$CAULDRON_PATH"
+        set issues_found (math $issues_found + 1)
+        set -a issues "CAULDRON_PATH directory missing: $CAULDRON_PATH"
+        echo "  ✗ Installation directory not found"
+    else
+        echo "  ✓ Installation directory OK"
+    end
+
+    # Check 2: Verify database exists
+    echo "→ Checking database..."
+    if not test -f "$CAULDRON_DATABASE"
+        set issues_found (math $issues_found + 1)
+        set -a issues "Database file missing: $CAULDRON_DATABASE"
+        echo "  ✗ Database not found"
+    else
+        # Verify database integrity
+        if sqlite3 "$CAULDRON_DATABASE" "PRAGMA integrity_check;" | grep -q "ok"
+            echo "  ✓ Database OK"
+        else
+            set issues_found (math $issues_found + 1)
+            set -a issues "Database integrity check failed"
+            echo "  ✗ Database corrupted"
+        end
+    end
+
+    # Check 3: Verify essential tables exist
+    if test -f "$CAULDRON_DATABASE"
+        echo "→ Checking database schema..."
+        set -l required_tables conversation_history project_context user_preferences sessions
+
+        set -l missing_tables ()
+
+        for table in $required_tables
+            if not sqlite3 "$CAULDRON_DATABASE" "SELECT name FROM sqlite_master WHERE type='table' AND name='$table';" | grep -q "$table"
+                set -a missing_tables $table
+            end
+        end
+
+        if test (count $missing_tables) -gt 0
+            set issues_found (math $issues_found + 1)
+            set -a issues "Missing database tables: "(string join ", " $missing_tables)
+            echo "  ✗ Missing tables: "(string join ", " $missing_tables)
+        else
+            echo "  ✓ Database schema OK"
+        end
+    end
+
+    # Check 4: Verify functions are installed
+    echo "→ Checking Fish functions..."
+    set -l functions_dir "$HOME/.config/cauldron/functions"
+
+    if not test -d "$functions_dir"
+        set issues_found (math $issues_found + 1)
+        set -a issues "Functions directory missing: $functions_dir"
+        echo "  ✗ Functions directory not found"
+    else
+        set -l func_count (ls "$functions_dir"/*.fish 2>/dev/null | wc -l)
+
+        if test $func_count -lt 10
+            set issues_found (math $issues_found + 1)
+            set -a issues "Too few functions installed (found $func_count, expected 30+)"
+            echo "  ✗ Only $func_count functions found (expected 30+)"
+        else
+            echo "  ✓ Functions OK ($func_count installed)"
+        end
+    end
+
+    # Check 5: Verify data files
+    echo "→ Checking data files..."
+    set -l required_files palettes.json spinners.json
+
+    set -l missing_files ()
+
+    for file in $required_files
+        set -l file_path (dirname "$CAULDRON_DATABASE")"/$file"
+        if not test -f "$file_path"
+            set -a missing_files $file
+        end
+    end
+
+    if test (count $missing_files) -gt 0
+        set issues_found (math $issues_found + 1)
+        set -a issues "Missing data files: "(string join ", " $missing_files)
+        echo "  ✗ Missing files: "(string join ", " $missing_files)
+    else
+        echo "  ✓ Data files OK"
+    end
+
+    # Check 6: Verify Fish config
+    echo "→ Checking Fish configuration..."
+    set -l fish_config "$HOME/.config/fish/config.fish"
+
+    if not test -f "$fish_config"
+        set issues_found (math $issues_found + 1)
+        set -a issues "Fish config file missing"
+        echo "  ✗ Fish config not found"
+    else if not grep -q "CAULDRON_PATH" "$fish_config"
+        set issues_found (math $issues_found + 1)
+        set -a issues "Cauldron not configured in Fish config"
+        echo "  ✗ Cauldron not in Fish config"
+    else
+        echo "  ✓ Fish configuration OK"
+    end
+
+    # Summary
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    if test $issues_found -eq 0
+        echo "✨ No issues found! Cauldron is healthy."
+        return 0
+    end
+
+    echo "Found $issues_found issue(s):"
+    echo ""
+
+    for issue in $issues
+        echo "  • $issue"
+    end
+
+    if set -q _flag_verify_only
+        echo ""
+        echo "Run 'cauldron_repair --fix-all' to fix these issues"
+        return 1
+    end
+
+    # Ask user if they want to fix
+    echo ""
+
+    if not set -q _flag_fix_all
+        read -l -P "Attempt to fix these issues? [y/N] " confirm
+        if test "$confirm" != "y" -a "$confirm" != "Y"
+            echo "Repair cancelled"
+            return 1
+        end
+    end
+
+    echo ""
+    echo "→ Attempting repairs..."
+    echo ""
+
+    # Fix 1: Recreate database if missing or corrupted
+    if string match -q "*Database*" -- $issues
+        echo "  → Recreating database..."
+
+        # Backup existing database if it exists
+        if test -f "$CAULDRON_DATABASE"
+            mv "$CAULDRON_DATABASE" "$CAULDRON_DATABASE.broken.bak"
+        end
+
+        # Create new database
+        mkdir -p (dirname "$CAULDRON_DATABASE")
+
+        if test -f "$CAULDRON_PATH/data/schema.sql"
+            sqlite3 "$CAULDRON_DATABASE" < "$CAULDRON_PATH/data/schema.sql"
+            sqlite3 "$CAULDRON_DATABASE" < "$CAULDRON_PATH/data/memory_schema.sql" 2>/dev/null
+            sqlite3 "$CAULDRON_DATABASE" < "$CAULDRON_PATH/data/proactive_schema.sql" 2>/dev/null
+
+            # Run migrations
+            __run_migrations 2>/dev/null
+
+            echo "    ✓ Database recreated"
+            set issues_fixed (math $issues_fixed + 1)
+        else
+            echo "    ✗ Schema files not found"
+        end
+    end
+
+    # Fix 2: Reinstall functions
+    if string match -q "*function*" -- $issues
+        echo "  → Reinstalling functions..."
+
+        mkdir -p "$functions_dir"
+
+        set -l copied_count 0
+        for func_file in "$CAULDRON_PATH"/functions/*.fish
+            if test -f "$func_file"
+                cp -f "$func_file" "$functions_dir/"
+                set copied_count (math $copied_count + 1)
+            end
+        end
+
+        echo "    ✓ Installed $copied_count functions"
+        set issues_fixed (math $issues_fixed + 1)
+    end
+
+    # Fix 3: Restore data files
+    if string match -q "*data file*" -- $issues
+        echo "  → Restoring data files..."
+
+        set -l data_dir (dirname "$CAULDRON_DATABASE")
+
+        if test -f "$CAULDRON_PATH/data/palettes.json"
+            cp -f "$CAULDRON_PATH/data/palettes.json" "$data_dir/"
+        end
+
+        if test -f "$CAULDRON_PATH/data/spinners.json"
+            cp -f "$CAULDRON_PATH/data/spinners.json" "$data_dir/"
+        end
+
+        echo "    ✓ Data files restored"
+        set issues_fixed (math $issues_fixed + 1)
+    end
+
+    # Fix 4: Fix Fish config
+    if string match -q "*Fish config*" -- $issues
+        echo "  → Updating Fish configuration..."
+
+        set -l fish_config "$HOME/.config/fish/config.fish"
+        mkdir -p (dirname "$fish_config")
+        touch "$fish_config"
+
+        # Add Cauldron configuration
+        echo "" >> "$fish_config"
+        echo "# Cauldron - Magik for your terminal" >> "$fish_config"
+        echo "set -gx CAULDRON_PATH \"$CAULDRON_PATH\"" >> "$fish_config"
+        echo "set -gx CAULDRON_DATABASE \"\$HOME/.config/cauldron/data/cauldron.db\"" >> "$fish_config"
+        echo "set -gx CAULDRON_PALETTES \"\$HOME/.config/cauldron/data/palettes.json\"" >> "$fish_config"
+        echo "set -gx CAULDRON_SPINNERS \"\$HOME/.config/cauldron/data/spinners.json\"" >> "$fish_config"
+        echo "" >> "$fish_config"
+        echo "if not contains \"\$HOME/.config/cauldron/functions\" \$fish_function_path" >> "$fish_config"
+        echo "    set -gx fish_function_path \"\$HOME/.config/cauldron/functions\" \$fish_function_path" >> "$fish_config"
+        echo "end" >> "$fish_config"
+
+        echo "    ✓ Fish configuration updated"
+        set issues_fixed (math $issues_fixed + 1)
+    end
+
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "✨ Repair complete: $issues_fixed of $issues_found issues fixed"
+    echo ""
+    echo "Please restart your Fish shell:"
+    echo "  exec fish"
+
+    return 0
+end
