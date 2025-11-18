@@ -193,6 +193,16 @@ run_migrations() {
         __run_migrations
     "; then
         success "Migrations completed"
+
+        # Initialize personality system to ensure all personalities exist
+        fish -c "
+            set -gx CAULDRON_PATH '$CAULDRON_INSTALL_DIR'
+            set -gx CAULDRON_DATABASE '$CAULDRON_CONFIG_DIR/data/cauldron.db'
+            source '$CAULDRON_CONFIG_DIR/functions/__init_personality_system.fish'
+            source '$CAULDRON_CONFIG_DIR/functions/__ensure_builtin_personalities.fish'
+            __init_personality_system
+        " 2>/dev/null || true
+        success "Personality system initialized"
     else
         warn "Migration runner failed. You may need to run 'cauldron_repair'"
     fi
@@ -284,6 +294,11 @@ end
 # Initialize memory system
 if type -q __init_memory_system
     __init_memory_system
+end
+
+# Initialize personality system
+if type -q __init_personality_system
+    __init_personality_system
 end
 EOF
 
