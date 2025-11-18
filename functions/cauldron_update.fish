@@ -93,9 +93,41 @@ function cauldron_update --description "Update Cauldron to the latest version"
 
     echo "✓ Code updated successfully"
 
-    # Run migrations
+    # Copy updated functions FIRST (before running migrations)
+    echo "→ Updating functions..."
+    set -l functions_dir "$HOME/.config/cauldron/functions"
+    mkdir -p "$functions_dir"
+
+    set -l updated_count 0
+    for func_file in "$CAULDRON_PATH"/functions/*.fish
+        if test -f "$func_file"
+            set -l dest_file "$functions_dir/"(basename "$func_file")
+
+            # Skip if source and destination are the same (shouldn't happen, but defensive)
+            if test "$func_file" != "$dest_file"
+                cp -f "$func_file" "$dest_file" 2>/dev/null
+                set updated_count (math $updated_count + 1)
+            end
+        end
+    end
+
+    echo "✓ Updated $updated_count functions"
+
+    # Copy updated data files
+    echo "→ Updating data files..."
+    set -l data_dir (dirname "$CAULDRON_DATABASE")
+    cp -f "$CAULDRON_PATH/data/palettes.json" "$data_dir/palettes.json" 2>/dev/null
+    cp -f "$CAULDRON_PATH/data/spinners.json" "$data_dir/spinners.json" 2>/dev/null
+
+    # NOW run migrations with the updated functions
     echo ""
     echo "→ Running database migrations..."
+
+    # Reload the migration function from the updated location
+    if test -f "$functions_dir/__run_migrations.fish"
+        source "$functions_dir/__run_migrations.fish"
+    end
+
     if not __run_migrations
         echo "Warning: Migrations failed"
         echo "Your database has been backed up"
@@ -104,31 +136,16 @@ function cauldron_update --description "Update Cauldron to the latest version"
         echo "✓ Migrations completed"
     end
 
-    # Copy updated data files
-    echo "→ Updating data files..."
-    cp -f "$CAULDRON_PATH/data/palettes.json" "$CAULDRON_DATABASE/../palettes.json" 2>/dev/null
-    cp -f "$CAULDRON_PATH/data/spinners.json" "$CAULDRON_DATABASE/../spinners.json" 2>/dev/null
-
-    # Copy updated functions
-    echo "→ Updating functions..."
-    set -l updated_count 0
-    for func_file in $CAULDRON_PATH/functions/*.fish
-        if test -f "$func_file"
-            set -l func_name (basename "$func_file")
-            cp -f "$func_file" "$HOME/.config/cauldron/functions/"
-            set updated_count (math $updated_count + 1)
-        end
-    end
-
-    echo "✓ Updated $updated_count functions"
-
     # Update Node.js dependencies if needed
     if test -f "$CAULDRON_PATH/package.json"
         echo "→ Updating Node.js dependencies..."
         if command -q pnpm
-            pnpm install 2>/dev/null
+            cd "$CAULDRON_PATH"
+            # Suppress errors from optional dependencies like sqlite3
+            pnpm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
         else if command -q npm
-            npm install 2>/dev/null
+            cd "$CAULDRON_PATH"
+            npm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
         end
     end
 
