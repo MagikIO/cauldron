@@ -35,6 +35,9 @@ function __init_memory -d "Initialize the familiar memory system in the database
         # Initialize the current session
         __init_session
 
+        # Initialize proactive intelligence (if enabled)
+        __init_proactive
+
         return 0
     else
         echo "✗ Failed to initialize memory system"
