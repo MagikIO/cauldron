@@ -59,12 +59,12 @@ function __format_duration --description "Format milliseconds to human-readable 
     if test $hours -gt 0
         set -l mins (math "$minutes % 60")
         set -l secs (math "$seconds % 60")
-        echo "{$hours}h {$mins}m {$secs}s"
+        echo "$hours"h "$mins"m "$secs"s
     else if test $minutes -gt 0
         set -l secs (math "$seconds % 60")
-        echo "{$minutes}m {$secs}s"
+        echo "$minutes"m "$secs"s
     else
-        echo "{$seconds}s"
+        echo "$seconds"s
     end
 end
 
