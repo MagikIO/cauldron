@@ -99,13 +99,20 @@ function cauldron_update --description "Update Cauldron to the latest version"
     mkdir -p "$functions_dir"
 
     set -l updated_count 0
+
+    # Copy from functions/ directory
     for func_file in "$CAULDRON_PATH"/functions/*.fish
         if test -f "$func_file"
-            set -l dest_file "$functions_dir/"(basename "$func_file")
+            cp -f "$func_file" "$functions_dir/" 2>/dev/null
+            set updated_count (math $updated_count + 1)
+        end
+    end
 
-            # Skip if source and destination are the same (shouldn't happen, but defensive)
-            if test "$func_file" != "$dest_file"
-                cp -f "$func_file" "$dest_file" 2>/dev/null
+    # Copy from familiar/ directory if it exists
+    if test -d "$CAULDRON_PATH/familiar"
+        for func_file in "$CAULDRON_PATH"/familiar/*.fish
+            if test -f "$func_file"
+                cp -f "$func_file" "$functions_dir/" 2>/dev/null
                 set updated_count (math $updated_count + 1)
             end
         end
@@ -140,12 +147,13 @@ function cauldron_update --description "Update Cauldron to the latest version"
     if test -f "$CAULDRON_PATH/package.json"
         echo "→ Updating Node.js dependencies..."
         if command -q pnpm
-            cd "$CAULDRON_PATH"
-            # Suppress errors from optional dependencies like sqlite3
-            pnpm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
+            # Run in subshell to avoid changing current directory
+            fish -c "cd '$CAULDRON_PATH'; pnpm install" >/dev/null 2>&1; or true
+            echo "✓ Node dependencies updated"
         else if command -q npm
-            cd "$CAULDRON_PATH"
-            npm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
+            # Run in subshell to avoid changing current directory
+            fish -c "cd '$CAULDRON_PATH'; npm install" >/dev/null 2>&1; or true
+            echo "✓ Node dependencies updated"
         end
     end
 

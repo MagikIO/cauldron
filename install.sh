@@ -230,6 +230,16 @@ install_functions() {
         fi
     done
 
+    # Copy familiar directory functions if they exist
+    if [ -d "$CAULDRON_INSTALL_DIR/familiar" ]; then
+        for func_file in "$CAULDRON_INSTALL_DIR"/familiar/*.fish; do
+            if [ -f "$func_file" ]; then
+                cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
+                ((function_count++))
+            fi
+        done
+    fi
+
     success "Installed $function_count functions"
 }
 
@@ -244,7 +254,16 @@ setup_fish_config() {
 
     # Check if Cauldron is already sourced
     if [ -f "$fish_config" ] && grep -q "CAULDRON_PATH" "$fish_config" 2>/dev/null; then
-        info "Cauldron already configured in $fish_config"
+        info "Cauldron already configured, updating paths..."
+
+        # Update the CAULDRON_PATH if it's wrong (pointing to config instead of install dir)
+        sed -i.bak "s|set -gx CAULDRON_PATH.*|set -gx CAULDRON_PATH \"$CAULDRON_INSTALL_DIR\"|g" "$fish_config"
+        sed -i.bak "s|set -gx CAULDRON_DATABASE.*|set -gx CAULDRON_DATABASE \"$CAULDRON_CONFIG_DIR/data/cauldron.db\"|g" "$fish_config"
+        sed -i.bak "s|set -gx CAULDRON_PALETTES.*|set -gx CAULDRON_PALETTES \"$CAULDRON_CONFIG_DIR/data/palettes.json\"|g" "$fish_config"
+        sed -i.bak "s|set -gx CAULDRON_SPINNERS.*|set -gx CAULDRON_SPINNERS \"$CAULDRON_CONFIG_DIR/data/spinners.json\"|g" "$fish_config"
+        sed -i.bak "s|set -gx CAULDRON_INTERNAL_TOOLS.*|set -gx CAULDRON_INTERNAL_TOOLS \"$CAULDRON_INSTALL_DIR/tools\"|g" "$fish_config"
+
+        success "Fish configuration paths updated"
     else
         info "Adding Cauldron to Fish configuration..."
 
@@ -281,12 +300,12 @@ install_node_dependencies() {
     if command_exists pnpm; then
         info "Using pnpm..."
         # Suppress sqlite3 build errors (optional dependency)
-        pnpm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
+        pnpm install >/dev/null 2>&1 || true
         success "Node dependencies installed"
     elif command_exists npm; then
         info "Using npm..."
         # Suppress sqlite3 build errors (optional dependency)
-        npm install 2>&1 | grep -v "sqlite3" | grep -v "gyp" | grep -v "prebuild-install" || true
+        npm install >/dev/null 2>&1 || true
         success "Node dependencies installed"
     else
         warn "Neither pnpm nor npm found, skipping Node.js dependencies"
