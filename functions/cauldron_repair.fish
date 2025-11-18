@@ -94,7 +94,23 @@ function cauldron_repair --description "Repair broken Cauldron installation"
             set -a issues "Too few functions installed (found $func_count, expected 30+)"
             echo "  ✗ Only $func_count functions found (expected 30+)"
         else
-            echo "  ✓ Functions OK ($func_count installed)"
+            # Check for critical functions (including familiar functions)
+            set -l critical_functions ask.fish f-thinks.fish f-says.fish cauldron_update.fish cauldron_repair.fish
+            set -l missing_functions ()
+
+            for func in $critical_functions
+                if not test -f "$functions_dir/$func"
+                    set -a missing_functions $func
+                end
+            end
+
+            if test (count $missing_functions) -gt 0
+                set issues_found (math $issues_found + 1)
+                set -a issues "Missing critical functions: "(string join ", " $missing_functions)
+                echo "  ✗ Missing critical functions: "(string join ", " $missing_functions)
+            else
+                echo "  ✓ Functions OK ($func_count installed)"
+            end
         end
     end
 
@@ -211,6 +227,16 @@ function cauldron_repair --description "Repair broken Cauldron installation"
             if test -f "$func_file"
                 cp -f "$func_file" "$functions_dir/"
                 set copied_count (math $copied_count + 1)
+            end
+        end
+
+        # Copy familiar directory functions if they exist
+        if test -d "$CAULDRON_PATH/familiar"
+            for func_file in "$CAULDRON_PATH"/familiar/*.fish
+                if test -f "$func_file"
+                    cp -f "$func_file" "$functions_dir/"
+                    set copied_count (math $copied_count + 1)
+                end
             end
         end
 

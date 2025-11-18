@@ -339,9 +339,32 @@ verify_installation() {
     fi
 
     # Check function count
-    local func_count=$(find "$CAULDRON_CONFIG_DIR/functions" -name "*.fish" | wc -l)
+    local func_count=$(find "$CAULDRON_CONFIG_DIR/functions" -name "*.fish" 2>/dev/null | wc -l)
     if [ "$func_count" -lt 10 ]; then
         errors+=("Too few functions installed (found $func_count)")
+    fi
+
+    # Check for critical functions (including familiar functions)
+    local critical_functions=("ask.fish" "f-thinks.fish" "f-says.fish" "cauldron_update.fish" "cauldron_repair.fish")
+    local missing_functions=()
+
+    for func in "${critical_functions[@]}"; do
+        if [ ! -f "$CAULDRON_CONFIG_DIR/functions/$func" ]; then
+            missing_functions+=("$func")
+        fi
+    done
+
+    if [ ${#missing_functions[@]} -ne 0 ]; then
+        errors+=("Missing critical functions: ${missing_functions[*]}")
+    fi
+
+    # Check data files
+    if [ ! -f "$CAULDRON_CONFIG_DIR/data/palettes.json" ]; then
+        errors+=("palettes.json not found")
+    fi
+
+    if [ ! -f "$CAULDRON_CONFIG_DIR/data/spinners.json" ]; then
+        errors+=("spinners.json not found")
     fi
 
     if [ ${#errors[@]} -ne 0 ]; then
@@ -352,7 +375,7 @@ verify_installation() {
         exit 1
     fi
 
-    success "Installation verified"
+    success "Installation verified ($func_count functions installed)"
 }
 
 # Print success message
