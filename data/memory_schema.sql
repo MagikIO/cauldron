@@ -1,76 +1,50 @@
-CREATE TABLE "cauldron" (
-	"version"	TEXT NOT NULL COLLATE RTRIM,
-	PRIMARY KEY("version")
-);
-CREATE TABLE "dependencies" (
-	"id"	INTEGER,
-	"name"	TEXT NOT NULL UNIQUE,
-	"version"	TEXT,
-	PRIMARY KEY("id" AUTOINCREMENT)
-);
-CREATE TABLE "familiars" (
-	"id"	integer,
-	"name"	TEXT NOT NULL UNIQUE COLLATE RTRIM,
-	"display_name"	TEXT COLLATE RTRIM,
-	"familiar_type"	TEXT NOT NULL COLLATE RTRIM,
-	"unlocked"	INTEGER NOT NULL DEFAULT 0,
-	"cow_src_ext"	INTEGER DEFAULT 0,
-	"nickname"	TEXT COLLATE NOCASE,
-	PRIMARY KEY("id" AUTOINCREMENT)
-);
-
-CREATE VIEW "unlocked_familiars" AS SELECT * FROM familiars WHERE unlocked = 1;
-
-INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('1', 'koala', NULL, 'Woodland-Cute', '1', NULL, NULL);
-INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('2', 'hellokitty', 'Hello Kitty', 'Mascot-Cute', '1', NULL, NULL);
-INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('3', 'suse', NULL, 'Jungle-Cute', '1', NULL, NULL);
-INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('4', 'tux', NULL, 'Artic-Cute', '1', NULL, NULL);
-INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('5', 'cock', 'Rooster', 'Farm', '1', NULL, NULL);
-INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('6', 'duck', NULL, 'Farm-Urban-Cute', '1', NULL, NULL);
-INSERT INTO "familiars" ("id", "name", "display_name", "familiar_type", "unlocked", "cow_src_ext", "nickname") VALUES ('7', 'trogdor', NULL, 'Meme', '1', '1', NULL);
-
--- Memory System Tables (Context Awareness & Memory)
--- Added for v2.0 familiar enhancements
-
+-- Conversation History Table
+-- Stores all interactions with the familiar/ask function
 CREATE TABLE IF NOT EXISTS "conversation_history" (
 	"id"	INTEGER,
 	"session_id"	TEXT NOT NULL,
-	"timestamp"	INTEGER NOT NULL,
+	"timestamp"	INTEGER NOT NULL, -- Unix timestamp
 	"query"	TEXT NOT NULL,
 	"response"	TEXT,
-	"context_snapshot"	TEXT,
+	"context_snapshot"	TEXT, -- JSON string of context at time of query
 	"model"	TEXT DEFAULT 'llama3.2',
-	"command_type"	TEXT NOT NULL,
+	"command_type"	TEXT NOT NULL, -- 'ask', 'familiar', etc.
 	"success"	INTEGER DEFAULT 1,
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("session_id") REFERENCES "sessions"("session_id")
 );
 
+-- Project Context Table
+-- Stores project-specific information
 CREATE TABLE IF NOT EXISTS "project_context" (
 	"id"	INTEGER,
 	"project_path"	TEXT NOT NULL UNIQUE,
 	"project_name"	TEXT,
 	"git_remote"	TEXT,
 	"primary_language"	TEXT,
-	"languages"	TEXT,
+	"languages"	TEXT, -- JSON array of detected languages
 	"framework"	TEXT,
 	"package_manager"	TEXT,
-	"last_updated"	INTEGER NOT NULL,
-	"metadata"	TEXT,
+	"last_updated"	INTEGER NOT NULL, -- Unix timestamp
+	"metadata"	TEXT, -- JSON object for additional project info
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 
+-- User Preferences Table
+-- Stores global and project-specific user preferences
 CREATE TABLE IF NOT EXISTS "user_preferences" (
 	"id"	INTEGER,
 	"preference_key"	TEXT NOT NULL,
 	"preference_value"	TEXT NOT NULL,
-	"project_path"	TEXT,
+	"project_path"	TEXT, -- NULL for global preferences
 	"created_at"	INTEGER NOT NULL,
 	"updated_at"	INTEGER NOT NULL,
 	PRIMARY KEY("id" AUTOINCREMENT),
 	UNIQUE("preference_key", "project_path")
 );
 
+-- Sessions Table
+-- Tracks terminal sessions for conversation continuity
 CREATE TABLE IF NOT EXISTS "sessions" (
 	"id"	INTEGER,
 	"session_id"	TEXT NOT NULL UNIQUE,
@@ -82,12 +56,14 @@ CREATE TABLE IF NOT EXISTS "sessions" (
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 
+-- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS "idx_conversation_session" ON "conversation_history" ("session_id");
 CREATE INDEX IF NOT EXISTS "idx_conversation_timestamp" ON "conversation_history" ("timestamp");
 CREATE INDEX IF NOT EXISTS "idx_project_path" ON "project_context" ("project_path");
 CREATE INDEX IF NOT EXISTS "idx_user_prefs_project" ON "user_preferences" ("project_path");
 CREATE INDEX IF NOT EXISTS "idx_sessions_id" ON "sessions" ("session_id");
 
+-- Create views for common queries
 CREATE VIEW IF NOT EXISTS "recent_conversations" AS
 SELECT
 	ch.id,
@@ -119,6 +95,7 @@ WHERE ch.session_id = (
 )
 ORDER BY ch.timestamp DESC;
 
+-- Insert some default user preferences
 INSERT OR IGNORE INTO "user_preferences" ("preference_key", "preference_value", "project_path", "created_at", "updated_at")
 VALUES
 	('default_familiar', 'default', NULL, strftime('%s', 'now'), strftime('%s', 'now')),
