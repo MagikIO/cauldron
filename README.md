@@ -38,6 +38,9 @@ Cauldron is a comprehensive Fish Shell utility suite that enhances your terminal
 - **💾 Conversation Memory**: Persistent history across sessions with recall and search
 - **⚙️ User Preferences**: Learns your coding style and project-specific preferences
 - **🗂️ Project Detection**: Automatically detects languages, frameworks, and package managers
+- **🎭 Personality System**: Six built-in personalities (Wise Mentor, Sarcastic Debugger, Enthusiastic Cheerleader, Zen Master, Mad Scientist, Pair Programmer)
+- **📊 Relationship Building**: Your familiar learns and grows with you, unlocking features as you interact
+- **🎯 Adaptive Responses**: Adjusts tone and detail based on your error rate, project complexity, and stress levels
 
 ### 🎨 Rich Terminal UI
 - **Visual Components**: Boxes, badges, spinners, and progress indicators
@@ -66,16 +69,21 @@ Cauldron is a comprehensive Fish Shell utility suite that enhances your terminal
 ## Quick Start
 
 ```bash
-# Clone and install
+# One-line installation
+curl -fsSL https://raw.githubusercontent.com/MagikIO/cauldron/main/install.sh | bash
+
+# Or manual installation
 git clone https://github.com/MagikIO/cauldron.git ~/.cauldron
 cd ~/.cauldron
-./install.fish
+./install.sh
 
 # Start using Cauldron
-ask "How do I create a new React component?"  # Query AI
-hamsa "TODO"                                    # Search code with preview
-familiar "Hello, what can you help me with?"   # Chat with your familiar
-cauldron --help                                 # View all commands
+ask "How do I create a new React component?"  # Query AI with personality
+personality list                               # See available personalities
+personality set sarcastic_debugger            # Change your familiar's personality
+hamsa "TODO"                                   # Search code with preview
+familiar "Hello, what can you help me with?"  # Chat with your familiar
+cauldron --help                               # View all commands
 ```
 
 ---
@@ -90,14 +98,25 @@ cauldron --help                                 # View all commands
 - **Node.js** v22+ (recommended)
 - **pnpm** v9+ (optional, for development)
 
-### Standard Installation
+### Quick Installation (Recommended)
 
 ```bash
-# Create cauldron directory and clone
-mkdir -p ~/.cauldron
+# One-line installation with automatic setup
+curl -fsSL https://raw.githubusercontent.com/MagikIO/cauldron/main/install.sh | bash
+
+# Restart your shell
+exec fish
+```
+
+### Manual Installation
+
+```bash
+# Clone the repository
 git clone https://github.com/MagikIO/cauldron.git ~/.cauldron
 cd ~/.cauldron
-./install.fish
+
+# Run installation script
+./install.sh
 ```
 
 The installer will:
@@ -108,26 +127,42 @@ The installer will:
 5. Install essential tools (fzf, bat, cowsay, etc.)
 6. Configure your shell for immediate use
 
-### Re-Installation
-
-If you encounter issues and need to re-install while preserving your configuration:
-
-```bash
-./internal/__backup_cauldron_and_update.fish
-```
-
 ### Updating
 
-Keep Cauldron up to date with:
+Keep Cauldron up to date with the built-in update system:
 
 ```bash
-cauldron --update
+# Check for updates
+cauldron_update --check-only
+
+# Apply updates (with automatic backup)
+cauldron_update
 ```
 
-This runs a multi-step update process including:
-- Git repository updates
-- System package updates
-- Language runtime updates
+The update process:
+- ✅ Creates automatic database backup
+- ✅ Pulls latest code from GitHub
+- ✅ Runs database migrations
+- ✅ Updates Fish functions
+- ✅ Updates data files and Node.js dependencies
+- ✅ Preserves your conversation history and preferences
+
+### Repair Mode
+
+If something goes wrong, use repair mode:
+
+```bash
+# Check for issues
+cauldron_repair --verify-only
+
+# Auto-fix all issues
+cauldron_repair --fix-all
+
+# Interactive repair
+cauldron_repair
+```
+
+See [INSTALL_UPDATE.md](./INSTALL_UPDATE.md) for detailed installation and troubleshooting guide.
 - Dependency management
 
 For detailed installation instructions, see [docs/INSTALLATION.md](docs/INSTALLATION.md).
@@ -205,6 +240,38 @@ context -u               # Update project context in database
 forget -p coding_style   # Remove a preference
 forget -s                # Clear session history
 ```
+
+### Personality System
+
+```bash
+# List available personalities
+personality list
+
+# See current personality and relationship status
+personality show
+
+# Change personality
+personality set sarcastic_debugger         # Global
+personality set zen_master --project       # Project-specific
+
+# View personality details
+personality info wise_mentor
+
+# Create custom personality
+personality create my_helper
+
+# Edit personality traits
+personality edit my_helper
+
+# Export/import personalities
+personality export sarcastic_debugger ~/my_personality.json
+personality import ~/shared_personality.json
+
+# Reset relationship level
+personality reset
+```
+
+See [PERSONALITY_SYSTEM.md](./PERSONALITY_SYSTEM.md) for detailed personality documentation.
 
 ### Package Management
 

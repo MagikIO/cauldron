@@ -1,6 +1,6 @@
 function ask -a query
   # Version Number
-  set -l func_version "2.0.0"
+  set -l func_version "3.0.0"
   # Flag options
   set -l options v/version h/help m/markdown c/context= n/no-memory
   argparse -n ask $options -- $argv
@@ -18,7 +18,7 @@ function ask -a query
   if set -q _flag_help
       echo "Usage: ask <question>"
       echo "Version: $func_version"
-      echo "Ask a question to the llama3.2 model with context awareness"
+      echo "Ask a question to the llama3.2 model with personality and context awareness"
       echo
       echo "Options:"
       echo "  -v, --version    Show the version number"
@@ -31,6 +31,10 @@ function ask -a query
       echo "  ask 'What is the meaning of life?'"
       echo "  ask 'What is the meaning of life?' -m"
       echo "  ask 'Explain my last question' -c 10"
+      echo
+      echo "Your familiar's personality affects how they respond."
+      echo "Use 'personality list' to see available personalities."
+      echo "Use 'personality show' to see your relationship status."
       return
   end
 
@@ -52,8 +56,27 @@ function ask -a query
       set conversation_history (__get_conversation_history $context_limit "session" 2>/dev/null)
   end
 
-  # Build enhanced system prompt with context
-  set -l system_prompt "You are this user's (Antonio) familiar named Azul. The user is familiar with fish shell, typescript, and some C#. He uses He/Him pronouns, smokes cannabis, likes spicy foods, and is lactose-intolerant."
+  # Build personality-aware system prompt
+  set -l system_prompt
+  if functions -q __build_personality_prompt
+      set system_prompt (__build_personality_prompt)
+  else
+      # Fallback if personality system not available
+      set system_prompt "You are this user's (Antonio) familiar named Azul. The user is familiar with fish shell, typescript, and some C#. He uses He/Him pronouns, smokes cannabis, likes spicy foods, and is lactose-intolerant."
+  end
+
+  # Add user profile context (can be moved to preferences later)
+  set -l user_context (sqlite3 "$CAULDRON_DATABASE" "
+      SELECT preference_value FROM user_preferences
+      WHERE preference_key = 'user_profile' AND project_path IS NULL
+  " 2>/dev/null)
+
+  if test -n "$user_context"
+      set system_prompt "$system_prompt\n\nUser Profile: $user_context"
+  else
+      # Default user context for backward compatibility
+      set system_prompt "$system_prompt\n\nUser: Antonio (He/Him). Familiar with fish shell, typescript, and C#. Smokes cannabis, likes spicy foods, lactose-intolerant."
+  end
 
   # Add project context if available
   if test -n "$current_context"
@@ -114,6 +137,16 @@ function ask -a query
   if not set -q _flag_no_memory
       if functions -q __save_conversation
           __save_conversation "$query" "$response_text" "ask" 2>/dev/null
+      end
+  end
+
+  # Track interaction for relationship building
+  if functions -q __track_interaction
+      # Consider the interaction successful if we got a response
+      if test -n "$response_text"
+          __track_interaction --success 2>/dev/null
+      else
+          __track_interaction --failure 2>/dev/null
       end
   end
 end
