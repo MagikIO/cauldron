@@ -11,6 +11,16 @@ function __init_personality_system --description "Initialize personality system 
         end
     end
 
+    # Ensure all 6 built-in personalities exist (self-healing for partial migrations)
+    set -l personality_count (sqlite3 "$CAULDRON_DATABASE" "
+        SELECT COUNT(*) FROM personalities WHERE is_builtin = 1
+    " 2>/dev/null)
+
+    if test "$personality_count" -lt "6"
+        # One or more built-in personalities are missing, ensure they all exist
+        __ensure_builtin_personalities
+    end
+
     # Ensure adaptive_metrics has global entry
     set -l metrics_check (sqlite3 "$CAULDRON_DATABASE" "
         SELECT COUNT(*) FROM adaptive_metrics WHERE project_path IS NULL

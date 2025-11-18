@@ -141,6 +141,18 @@ function cauldron_update --description "Update Cauldron to the latest version"
         echo "You may need to run 'cauldron_repair' to fix issues"
     else
         echo "✓ Migrations completed"
+
+        # Initialize personality system to ensure all personalities exist
+        if test -f "$functions_dir/__init_personality_system.fish"
+            source "$functions_dir/__init_personality_system.fish"
+        end
+        if test -f "$functions_dir/__ensure_builtin_personalities.fish"
+            source "$functions_dir/__ensure_builtin_personalities.fish"
+        end
+        if functions -q __init_personality_system
+            __init_personality_system 2>/dev/null || true
+            echo "✓ Personality system initialized"
+        end
     end
 
     # Update Node.js dependencies if needed
