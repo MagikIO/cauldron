@@ -1,6 +1,4 @@
-import sqlite3 from 'sqlite3'
-import sql from 'sql-template-tag'
-import { open, type Database } from 'sqlite'
+import Database from 'better-sqlite3'
 import consola from 'consola';
 
 interface createTableOptions { table: string, schema: string }
@@ -16,10 +14,10 @@ interface TableData<
 
 export default class DatabaseManager {
   public debug = false;
-  public db: Database<sqlite3.Database, sqlite3.Statement>
+  public db: Database.Database
   public tables = new Map<string, TableData>();
 
-  private constructor({ db, debug }: { db: Database<sqlite3.Database, sqlite3.Statement>, debug?: boolean }) {
+  private constructor({ db, debug }: { db: Database.Database, debug?: boolean }) {
     this.db = db;
     this.debug = debug ?? false;
   }
@@ -28,9 +26,9 @@ export default class DatabaseManager {
   private async loadTableMetadata() {
     try {
       // Step 1: Load table names and schema
-      const nameAndSchemaResponse = await this.db.all<{ name: string, sql: string }[]>(`
-      SELECT name, sql FROM sqlite_master WHERE type='table'
-    `);
+      const nameAndSchemaResponse = this.db.prepare(`
+        SELECT name, sql FROM sqlite_master WHERE type='table'
+      `).all() as { name: string, sql: string }[];
 
       // Initialize a structure to hold the table data
       this.tables = new Map();
@@ -38,7 +36,7 @@ export default class DatabaseManager {
       // Step 2: Load data for each table
       for (const { name, sql: schema } of nameAndSchemaResponse) {
         // Fetch all rows from the table
-        const rows = await this.db.all<Record<any, unknown>[]>(`SELECT * FROM "${name}"`);
+        const rows = this.db.prepare(`SELECT * FROM "${name}"`).all() as Record<any, unknown>[];
 
         // The rows are already in the desired format (an array of objects),
         // so you can directly use them without needing to parse JSON.
@@ -69,7 +67,7 @@ export default class DatabaseManager {
         return;
       }
 
-      await this.db.exec(`
+      this.db.exec(`
         CREATE TABLE IF NOT EXISTS ${table} (
         id INTEGER PRIMARY KEY,
         ${schema}
@@ -84,21 +82,20 @@ export default class DatabaseManager {
     } catch (error) { console.error('[DB]', error) }
   }
 
-  private async prepareJSON({ table, field }: prepareJSONOptions) {
-    return this.db.prepare(sql`INSERT INTO ${table} (${field}) VALUES (?)`)
+  private prepareJSON({ table, field }: prepareJSONOptions) {
+    return this.db.prepare(`INSERT INTO ${table} (${field}) VALUES (?)`)
   }
 
   public async insertJSON({ json, table, field }: insertJSONOptions) {
     try {
-      const statement = await this.prepareJSON({ table, field })
-      await statement.bind([JSON.stringify(json)])
-      return await statement.run()
+      const statement = this.prepareJSON({ table, field })
+      return statement.run(JSON.stringify(json))
     } catch (error) { console.error('[DB]', error) }
   }
 
   public async close() {
     try {
-      await this.db.close();
+      this.db.close();
     } catch (error) {
       console.error('[DB]', error)
     } finally {
@@ -108,13 +105,9 @@ export default class DatabaseManager {
 
   public static async init(databasePath: string, debug = false) {
     try {
-      // Move into verbose mode
-      if (debug) sqlite3.verbose();
-      // Create connection to DB with cache
-      const db = await open({ filename: databasePath, driver: sqlite3.cached.Database });
-      // Add a listener for errors
-      db.on('error', (err: unknown) => console.error('Database error', err));
-      if (debug) db.on('trace', (s: unknown) => console.log('SQL Executed:', s));
+      // Create connection to DB
+      const db = new Database(databasePath, debug ? { verbose: console.log } : undefined);
+
       // Return a new instance of Database Manager
       const DB = new DatabaseManager({ db, debug });
       await DB.loadTableMetadata();
