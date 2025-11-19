@@ -202,9 +202,15 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       register-python-argcomplete --shell fish pipx >~/.config/fish/completions/pipx.fish
   end
 
+  # Ensure tte is installed and working (reinstall if broken)
   if not command -q tte
     pipx ensurepath
     pipx install terminaltexteffects --quiet
+  else
+    # Check if tte actually works (module might be broken)
+    if not tte --version >/dev/null 2>&1
+      pipx reinstall terminaltexteffects --quiet
+    end
   end
 
   if not command -q gum
@@ -268,9 +274,16 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Now we need to update the DB's version
   sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$LATEST_VERSION')"
 
-  styled-banner "Updated!"
+  # Use simple banner if styled-banner fails (tte might not be ready yet)
+  if command -q tte
+    styled-banner "Updated!"
+  else
+    banner "Updated!"
+  end
 
-  familiars
+  echo ""
+  echo "Cauldron has been updated to version $LATEST_VERSION"
+  echo "Restart your shell to use the updated version: exec fish"
 
   return 0
 end
