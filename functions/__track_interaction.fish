@@ -29,7 +29,22 @@ function __track_interaction --description "Track interaction and update relatio
 
     if test "$success" -eq 1
         # Successful interaction increases relationship
-        set relationship_change (math "max(1, 100 - (SELECT COALESCE(relationship_level, 0) FROM familiar_relationship WHERE personality_id = $personality_id AND project_path IS NULL)) / 20")
+        # First get the current relationship level
+        set -l current_rel_level (sqlite3 "$CAULDRON_DATABASE" "
+            SELECT COALESCE(relationship_level, 0)
+            FROM familiar_relationship
+            WHERE personality_id = $personality_id AND project_path IS NULL
+        " 2>/dev/null)
+
+        # Default to 0 if not found
+        if test -z "$current_rel_level"
+            set current_rel_level 0
+        end
+
+        # Calculate relationship change: max(1, (100 - current_level) / 20)
+        set -l temp_calc (math "100 - $current_rel_level")
+        set -l temp_div (math "$temp_calc / 20")
+        set relationship_change (math "max(1, $temp_div)")
 
         sqlite3 "$CAULDRON_DATABASE" "
             UPDATE familiar_relationship
