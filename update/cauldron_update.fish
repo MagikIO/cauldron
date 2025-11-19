@@ -175,6 +175,13 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql 2> /dev/null
   end
 
+  # Add date column to dependencies table if it doesn't exist (for parallel installation tracking)
+  # Check if the column exists before trying to add it
+  set has_date_column (sqlite3 $CAULDRON_DATABASE "PRAGMA table_info(dependencies);" | grep -c "date")
+  if test $has_date_column -eq 0
+    sqlite3 $CAULDRON_DATABASE "ALTER TABLE dependencies ADD COLUMN date TEXT;" 2> /dev/null
+  end
+
   # List of folders with functions
   set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update"
 
