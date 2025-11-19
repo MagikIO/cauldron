@@ -224,51 +224,164 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       set snap_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.snap[]')
 
       sudo -v
-  
-      for dep in $apt_dependencies
-          gum spin --spinner moon --title "Installing $dep..." -- fish -c "
-              if not type -q $dep
-                  sudo apt install $dep -y
-              end
-              if not type -q $dep
-                  set ERROR_MSG \"Failed to install: $dep using the command 'sudo apt install $dep -y'\"
-                  echo $ERROR_MSG >> $CAULDRON_PATH/logs/cauldron.log
-              else
-                  set VERSION (apt show $dep | grep 'Version' | cut -d ':' -f 2 | tr -d ' ')
-                  set DATE (date)
-                  sqlite3 $CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$dep', '$VERSION', '$DATE')\"
-              end"
+
+      # Create temp directory for parallel job status
+      set temp_dir (mktemp -d)
+      set apt_log "$temp_dir/apt.log"
+      set brew_log "$temp_dir/brew.log"
+      set snap_log "$temp_dir/snap.log"
+      set apt_status "$temp_dir/apt_status"
+      set brew_status "$temp_dir/brew_status"
+      set snap_status "$temp_dir/snap_status"
+
+      # Job 1: Install all APT dependencies in parallel
+      if test (count $apt_dependencies) -gt 0
+        fish -c "
+          set -l missing_deps
+          for dep in $apt_dependencies
+            if not type -q \$dep
+              set -a missing_deps \$dep
+            end
+          end
+
+          if test (count \$missing_deps) -gt 0
+            sudo apt install -y \$missing_deps >> '$apt_log' 2>&1
+          end
+
+          # Log installed dependencies to database
+          for dep in $apt_dependencies
+            if type -q \$dep
+              set VERSION (apt show \$dep 2>/dev/null | grep 'Version' | cut -d ':' -f 2 | tr -d ' ')
+              set DATE (date)
+              sqlite3 '$CAULDRON_DATABASE' \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"
+            else
+              echo \"Failed to install: \$dep\" >> '$apt_log'
+            end
+          end
+          echo 'done' > '$apt_status'
+        " &
+        set apt_pid $last_pid
+      else
+        echo 'done' > $apt_status
       end
-      
-      for dep in $brew_dependencies
-          gum spin --spinner moon --title "Installing $dep..." -- fish -c "
-              if not type -q $dep
-                  brew install $dep
-              end
-              if not type -q $dep
-                  set ERROR_MSG \"Failed to install: $dep using the command 'brew install $dep'\"
-                  echo $ERROR_MSG >> $CAULDRON_PATH/logs/cauldron.log
-              else
-                  set VERSION (brew info $dep | grep 'version' | cut -d ' ' -f 1 | tr -d 'version:')
-                  set DATE (date)
-                  sqlite3 $CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$dep', '$VERSION', '$DATE')\"
-              end"
+
+      # Job 2: Install all Brew dependencies in parallel
+      if test (count $brew_dependencies) -gt 0
+        fish -c "
+          set -l missing_deps
+          for dep in $brew_dependencies
+            if not type -q \$dep
+              set -a missing_deps \$dep
+            end
+          end
+
+          if test (count \$missing_deps) -gt 0
+            brew install \$missing_deps >> '$brew_log' 2>&1
+          end
+
+          # Log installed dependencies to database
+          for dep in $brew_dependencies
+            if type -q \$dep
+              set VERSION (brew info \$dep 2>/dev/null | head -n 1 | grep -o '[0-9]\+\.[0-9]\+[^ ]*' | head -n 1)
+              set DATE (date)
+              sqlite3 '$CAULDRON_DATABASE' \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"
+            else
+              echo \"Failed to install: \$dep\" >> '$brew_log'
+            end
+          end
+          echo 'done' > '$brew_status'
+        " &
+        set brew_pid $last_pid
+      else
+        echo 'done' > $brew_status
       end
-      
-      for dep in $snap_dependencies
-          gum spin --spinner moon --title "Installing $dep..." -- fish -c "
-              if not type -q $dep
-                  sudo snap install $dep
-              end
-              if not type -q $dep
-                  set ERROR_MSG \"Failed to install: $dep using the command 'sudo snap install $dep'\"
-                  echo $ERROR_MSG >> $CAULDRON_PATH/logs/cauldron.log
-              else
-                  set VERSION (snap info $dep | grep 'installed' | cut -d ':' -f 2 | tr -d ' ')
-                  set DATE (date)
-                  sqlite3 $CAULDRON_DATABASE \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$dep', '$VERSION', '$DATE')\"
-              end"
+
+      # Job 3: Install all Snap dependencies in parallel
+      if test (count $snap_dependencies) -gt 0
+        fish -c "
+          for dep in $snap_dependencies
+            if not type -q \$dep
+              sudo snap install \$dep >> '$snap_log' 2>&1
+            end
+
+            if type -q \$dep
+              set VERSION (snap info \$dep 2>/dev/null | grep 'installed' | cut -d ':' -f 2 | tr -d ' ')
+              set DATE (date)
+              sqlite3 '$CAULDRON_DATABASE' \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"
+            else
+              echo \"Failed to install: \$dep\" >> '$snap_log'
+            end
+          end
+          echo 'done' > '$snap_status'
+        " &
+        set snap_pid $last_pid
+      else
+        echo 'done' > $snap_status
       end
+
+      # Show progress while waiting for all package managers to complete
+      set apt_done 0
+      set brew_done 0
+      set snap_done 0
+
+      echo ""
+      echo "Installing dependencies in parallel..."
+      echo "  APT packages: $apt_dependencies"
+      echo "  Brew packages: $brew_dependencies"
+      echo "  Snap packages: $snap_dependencies"
+      echo ""
+
+      while test $apt_done -eq 0 -o $brew_done -eq 0 -o $snap_done -eq 0
+        if test $apt_done -eq 0 -a -f "$apt_status"
+          set apt_done 1
+          echo "  ✓ APT dependencies completed"
+        end
+
+        if test $brew_done -eq 0 -a -f "$brew_status"
+          set brew_done 1
+          echo "  ✓ Brew dependencies completed"
+        end
+
+        if test $snap_done -eq 0 -a -f "$snap_status"
+          set snap_done 1
+          echo "  ✓ Snap dependencies completed"
+        end
+
+        if test $apt_done -eq 0 -o $brew_done -eq 0 -o $snap_done -eq 0
+          sleep 0.5
+        end
+      end
+
+      echo ""
+      echo "✓ All dependencies installed!"
+
+      # Show any errors from logs
+      if test -f "$apt_log" -a -s "$apt_log"
+        if grep -q "Failed to install" "$apt_log"
+          echo ""
+          echo "⚠ APT warnings/errors:"
+          grep "Failed to install" "$apt_log"
+        end
+      end
+
+      if test -f "$brew_log" -a -s "$brew_log"
+        if grep -q "Failed to install" "$brew_log"
+          echo ""
+          echo "⚠ Brew warnings/errors:"
+          grep "Failed to install" "$brew_log"
+        end
+      end
+
+      if test -f "$snap_log" -a -s "$snap_log"
+        if grep -q "Failed to install" "$snap_log"
+          echo ""
+          echo "⚠ Snap warnings/errors:"
+          grep "Failed to install" "$snap_log"
+        end
+      end
+
+      # Cleanup temp files
+      rm -rf "$temp_dir" 2>/dev/null
   end
 
   # Now we need to update the DB's version
