@@ -93,81 +93,172 @@ function cauldron_update --description "Update Cauldron to the latest version"
 
     echo "✓ Code updated successfully"
 
-    # Copy updated functions FIRST (before running migrations)
-    echo "→ Updating functions..."
+    # Show all pending installation tasks
+    echo ""
+    echo "📦 Installation Tasks:"
+    echo "  • Updating functions and data files"
+    echo "  • Running database migrations"
+    echo "  • Initializing personality system"
+    if test -f "$CAULDRON_PATH/package.json"
+        echo "  • Updating Node.js dependencies"
+    end
+    echo ""
+
+    # Create temp directory for parallel job status
+    set -l temp_dir (mktemp -d)
     set -l functions_dir "$HOME/.config/cauldron/functions"
     mkdir -p "$functions_dir"
 
-    set -l updated_count 0
+    # Job 1: Core update chain (functions → data → migrations → personality)
+    # This must be sequential due to dependencies
+    set -l core_status "$temp_dir/core_status"
+    set -l core_log "$temp_dir/core_log"
 
-    # Copy from functions/ directory
-    for func_file in "$CAULDRON_PATH"/functions/*.fish
-        if test -f "$func_file"
-            cp -f "$func_file" "$functions_dir/" 2>/dev/null
-            set updated_count (math $updated_count + 1)
-        end
-    end
+    fish -c "
+        set -l updated_count 0
 
-    # Copy from familiar/ directory if it exists
-    if test -d "$CAULDRON_PATH/familiar"
-        for func_file in "$CAULDRON_PATH"/familiar/*.fish
-            if test -f "$func_file"
-                cp -f "$func_file" "$functions_dir/" 2>/dev/null
-                set updated_count (math $updated_count + 1)
+        # Copy functions
+        for func_file in '$CAULDRON_PATH'/functions/*.fish
+            if test -f \$func_file
+                cp -f \$func_file '$functions_dir/' 2>/dev/null
+                set updated_count (math \$updated_count + 1)
             end
         end
-    end
 
-    echo "✓ Updated $updated_count functions"
-
-    # Copy updated data files
-    echo "→ Updating data files..."
-    set -l data_dir (dirname "$CAULDRON_DATABASE")
-    cp -f "$CAULDRON_PATH/data/palettes.json" "$data_dir/palettes.json" 2>/dev/null
-    cp -f "$CAULDRON_PATH/data/spinners.json" "$data_dir/spinners.json" 2>/dev/null
-
-    # NOW run migrations with the updated functions
-    echo ""
-    echo "→ Running database migrations..."
-
-    # Reload the migration function from the updated location
-    if test -f "$functions_dir/__run_migrations.fish"
-        source "$functions_dir/__run_migrations.fish"
-    end
-
-    if not __run_migrations
-        echo "Warning: Migrations failed"
-        echo "Your database has been backed up"
-        echo "You may need to run 'cauldron_repair' to fix issues"
-    else
-        echo "✓ Migrations completed"
-
-        # Initialize personality system to ensure all personalities exist
-        if test -f "$functions_dir/__init_personality_system.fish"
-            source "$functions_dir/__init_personality_system.fish"
+        # Copy from familiar/ directory if it exists
+        if test -d '$CAULDRON_PATH/familiar'
+            for func_file in '$CAULDRON_PATH'/familiar/*.fish
+                if test -f \$func_file
+                    cp -f \$func_file '$functions_dir/' 2>/dev/null
+                    set updated_count (math \$updated_count + 1)
+                end
+            end
         end
-        if test -f "$functions_dir/__ensure_builtin_personalities.fish"
-            source "$functions_dir/__ensure_builtin_personalities.fish"
-        end
-        if functions -q __init_personality_system
-            __init_personality_system 2>/dev/null || true
-            echo "✓ Personality system initialized"
-        end
-    end
 
-    # Update Node.js dependencies if needed
+        echo \"functions:\$updated_count\" >> '$core_log'
+
+        # Copy data files
+        set -l data_dir (dirname '$CAULDRON_DATABASE')
+        cp -f '$CAULDRON_PATH/data/palettes.json' \$data_dir/palettes.json 2>/dev/null
+        cp -f '$CAULDRON_PATH/data/spinners.json' \$data_dir/spinners.json 2>/dev/null
+        echo 'data:ok' >> '$core_log'
+
+        # Run migrations
+        if test -f '$functions_dir/__run_migrations.fish'
+            source '$functions_dir/__run_migrations.fish'
+        end
+
+        if __run_migrations 2>&1 | tail -n 20 >> '$core_log'
+            echo 'migrations:ok' >> '$core_log'
+
+            # Initialize personality system
+            if test -f '$functions_dir/__init_personality_system.fish'
+                source '$functions_dir/__init_personality_system.fish'
+            end
+            if test -f '$functions_dir/__ensure_builtin_personalities.fish'
+                source '$functions_dir/__ensure_builtin_personalities.fish'
+            end
+            if functions -q __init_personality_system
+                __init_personality_system 2>/dev/null
+                echo 'personality:ok' >> '$core_log'
+            else
+                echo 'personality:skip' >> '$core_log'
+            end
+        else
+            echo 'migrations:failed' >> '$core_log'
+        end
+
+        echo 'done' > '$core_status'
+    " &
+    set -l core_pid $last_pid
+
+    # Job 2: Node.js dependencies (can run in parallel with core updates)
+    set -l node_status "$temp_dir/node_status"
+    set -l node_log "$temp_dir/node_log"
+    set -l has_nodejs 0
+
     if test -f "$CAULDRON_PATH/package.json"
-        echo "→ Updating Node.js dependencies..."
-        if command -q pnpm
-            # Run in subshell to avoid changing current directory
-            fish -c "cd '$CAULDRON_PATH'; pnpm install" >/dev/null 2>&1; or true
-            echo "✓ Node dependencies updated"
-        else if command -q npm
-            # Run in subshell to avoid changing current directory
-            fish -c "cd '$CAULDRON_PATH'; npm install" >/dev/null 2>&1; or true
-            echo "✓ Node dependencies updated"
+        set has_nodejs 1
+        fish -c "
+            if command -q pnpm
+                cd '$CAULDRON_PATH' && pnpm install >> '$node_log' 2>&1
+                echo 'pnpm:ok' >> '$node_log'
+            else if command -q npm
+                cd '$CAULDRON_PATH' && npm install >> '$node_log' 2>&1
+                echo 'npm:ok' >> '$node_log'
+            else
+                echo 'none:skip' >> '$node_log'
+            end
+            echo 'done' > '$node_status'
+        " &
+        set -l node_pid $last_pid
+    end
+
+    # Wait for jobs to complete with status updates
+    set -l core_done 0
+    set -l node_done 0
+    set -l dots 0
+
+    echo "⏳ Installing in parallel..."
+
+    while test $core_done -eq 0 -o \( $has_nodejs -eq 1 -a $node_done -eq 0 \)
+        # Check core job
+        if test $core_done -eq 0 -a -f "$core_status"
+            set core_done 1
+            echo "  ✓ Core updates completed"
+        end
+
+        # Check node job
+        if test $has_nodejs -eq 1 -a $node_done -eq 0 -a -f "$node_status"
+            set node_done 1
+            echo "  ✓ Node.js dependencies completed"
+        end
+
+        # Still waiting, show progress
+        if test $core_done -eq 0 -o \( $has_nodejs -eq 1 -a $node_done -eq 0 \)
+            sleep 0.5
         end
     end
+
+    echo ""
+    echo "📋 Installation Summary:"
+
+    # Parse and display core results
+    if test -f "$core_log"
+        set -l func_count (grep '^functions:' "$core_log" | cut -d: -f2)
+        if test -n "$func_count"
+            echo "  ✓ Updated $func_count functions"
+        end
+
+        if grep -q '^data:ok' "$core_log"
+            echo "  ✓ Data files updated"
+        end
+
+        if grep -q '^migrations:ok' "$core_log"
+            echo "  ✓ Database migrations completed"
+        else if grep -q '^migrations:failed' "$core_log"
+            echo "  ⚠ Migrations failed - database backed up"
+            echo "    You may need to run 'cauldron_repair' to fix issues"
+        end
+
+        if grep -q '^personality:ok' "$core_log"
+            echo "  ✓ Personality system initialized"
+        end
+    end
+
+    # Parse and display node results
+    if test $has_nodejs -eq 1 -a -f "$node_log"
+        if grep -q 'pnpm:ok' "$node_log"
+            echo "  ✓ Node dependencies updated (pnpm)"
+        else if grep -q 'npm:ok' "$node_log"
+            echo "  ✓ Node dependencies updated (npm)"
+        else if grep -q 'none:skip' "$node_log"
+            echo "  ⚠ No package manager found (skipped Node.js dependencies)"
+        end
+    end
+
+    # Cleanup temp files
+    rm -rf "$temp_dir" 2>/dev/null
 
     # Show what changed
     echo ""
