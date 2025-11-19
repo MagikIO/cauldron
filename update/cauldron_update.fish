@@ -165,6 +165,16 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Now we remove the temp folder
   rm -rf $tmp_dir
 
+  # Re-run schema and update migrations with the newly cloned files
+  # This ensures any new schema changes or migrations are applied to the restored database
+  if test -f $CAULDRON_PATH/data/schema.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql 2> /dev/null
+  end
+
+  if test -f $CAULDRON_PATH/data/update.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql 2> /dev/null
+  end
+
   # List of folders with functions
   set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update"
 
