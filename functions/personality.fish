@@ -18,6 +18,7 @@ function personality --description "Manage familiar personality profiles"
         echo ""
         echo "Commands:"
         echo "  list                   List all available personalities"
+        echo "  choose                 Interactively choose a personality (uses gum)"
         echo "  show                   Show current personality and relationship status"
         echo "  set <name> [--project] Set active personality (global or project-specific)"
         echo "  info <name>            Show detailed information about a personality"
@@ -30,6 +31,7 @@ function personality --description "Manage familiar personality profiles"
         echo "  traits <name>          Show personality traits"
         echo ""
         echo "Examples:"
+        echo "  personality choose"
         echo "  personality list"
         echo "  personality set sarcastic_debugger"
         echo "  personality set wise_mentor --project"
@@ -45,6 +47,8 @@ function personality --description "Manage familiar personality profiles"
     switch $command
         case list
             __personality_list
+        case choose
+            __personality_choose
         case show
             __personality_show
         case set
