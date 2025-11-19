@@ -6,6 +6,7 @@ CREATE TABLE "dependencies" (
 	"id"	INTEGER,
 	"name"	TEXT NOT NULL UNIQUE,
 	"version"	TEXT,
+	"date"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 CREATE TABLE "familiars" (
