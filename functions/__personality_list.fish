@@ -23,7 +23,8 @@ function __personality_list --description "List all available personalities"
         LIMIT 1
     " 2>/dev/null)
 
-    echo "$personalities" | while read -l line
+    # Iterate through each personality (array elements are space-separated in Fish)
+    for line in $personalities
         set -l parts (string split '|' $line)
         set -l name $parts[1]
         set -l display_name $parts[2]
