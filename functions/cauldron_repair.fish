@@ -78,7 +78,21 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         end
     end
 
-    # Check 4: Verify functions are installed
+    # Check 4: Verify dependencies table has date column
+    if test -f "$CAULDRON_DATABASE"
+        echo "→ Checking dependencies table schema..."
+        set -l has_date_column (sqlite3 "$CAULDRON_DATABASE" "PRAGMA table_info(dependencies);" 2>/dev/null | grep -c "date")
+
+        if test $has_date_column -eq 0
+            set issues_found (math $issues_found + 1)
+            set -a issues "Dependencies table missing 'date' column (required for parallel installs)"
+            echo "  ✗ Dependencies table schema outdated"
+        else
+            echo "  ✓ Dependencies table schema OK"
+        end
+    end
+
+    # Check 5: Verify functions are installed
     echo "→ Checking Fish functions..."
     set -l functions_dir "$HOME/.config/cauldron/functions"
 
@@ -114,7 +128,7 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         end
     end
 
-    # Check 5: Verify data files
+    # Check 6: Verify data files
     echo "→ Checking data files..."
     set -l required_files palettes.json spinners.json
 
@@ -135,7 +149,7 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         echo "  ✓ Data files OK"
     end
 
-    # Check 6: Verify Fish config
+    # Check 7: Verify Fish config
     echo "→ Checking Fish configuration..."
     set -l fish_config "$HOME/.config/fish/config.fish"
 
@@ -216,7 +230,29 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         end
     end
 
-    # Fix 2: Reinstall functions
+    # Fix 2: Update dependencies table schema
+    if string match -q "*Dependencies table*" -- $issues
+        echo "  → Updating dependencies table schema..."
+
+        # Check if the date column exists before trying to add it
+        set -l has_date_column (sqlite3 "$CAULDRON_DATABASE" "PRAGMA table_info(dependencies);" 2>/dev/null | grep -c "date")
+
+        if test $has_date_column -eq 0
+            sqlite3 "$CAULDRON_DATABASE" "ALTER TABLE dependencies ADD COLUMN date TEXT;" 2>/dev/null
+
+            if test $status -eq 0
+                echo "    ✓ Added date column to dependencies table"
+                set issues_fixed (math $issues_fixed + 1)
+            else
+                echo "    ✗ Failed to add date column"
+            end
+        else
+            echo "    ✓ Date column already exists"
+            set issues_fixed (math $issues_fixed + 1)
+        end
+    end
+
+    # Fix 3: Reinstall functions
     if string match -q "*function*" -- $issues
         echo "  → Reinstalling functions..."
 
@@ -244,7 +280,7 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         set issues_fixed (math $issues_fixed + 1)
     end
 
-    # Fix 3: Restore data files
+    # Fix 4: Restore data files
     if string match -q "*data file*" -- $issues
         echo "  → Restoring data files..."
 
@@ -262,7 +298,7 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         set issues_fixed (math $issues_fixed + 1)
     end
 
-    # Fix 4: Fix Fish config
+    # Fix 5: Fix Fish config
     if string match -q "*Fish config*" -- $issues
         echo "  → Updating Fish configuration..."
 
