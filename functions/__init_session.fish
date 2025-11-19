@@ -18,7 +18,7 @@ function __init_session -d "Initialize a new terminal session in the database"
     set project_path $cwd
 
     # Try to find git root
-    if git rev-parse --show-toplevel 2>/dev/null
+    if git rev-parse --show-toplevel >/dev/null 2>&1
         set project_path (git rev-parse --show-toplevel 2>/dev/null)
     end
 

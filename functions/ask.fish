@@ -94,13 +94,16 @@ function ask -a query
   set -l response_file (mktemp)
 
   if set -q _flag_markdown
+    # Build JSON payload using jq to properly escape the prompt
+    set -l json_payload (jq -n --arg model "llama3.2" --arg prompt "$system_prompt" '{
+      model: $model,
+      prompt: $prompt,
+      stream: false
+    }')
+
     set ai_response (curl -s -X POST http://localhost:11434/api/generate \
       -H "Content-Type: application/json" \
-      -d '{
-          "model": "llama3.2",
-          "prompt": "'"$system_prompt"'",
-          "stream": false
-      }')
+      -d "$json_payload")
 
       set familiar_response (echo $ai_response | jq '.response' | sed 's/\\n/\n/g; s/\\t/\t/g')
 
@@ -112,12 +115,15 @@ function ask -a query
 
       printf "$familiar_response" | glow
   else
+    # Build JSON payload using jq to properly escape the prompt
+    set -l json_payload (jq -n --arg model "llama3.2" --arg prompt "$system_prompt" '{
+      model: $model,
+      prompt: $prompt
+    }')
+
     curl -s -X POST http://localhost:11434/api/generate \
         -H "Content-Type: application/json" \
-        -d '{
-            "model": "llama3.2",
-            "prompt": "'"$system_prompt"'"
-        }' | while read -l line
+        -d "$json_payload" | while read -l line
             set response (echo $line | jq -r '.response')
             set done (echo $line | jq -r '.done')
 
