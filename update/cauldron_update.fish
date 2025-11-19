@@ -250,6 +250,9 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       set apt_status "$temp_dir/apt_status"
       set brew_status "$temp_dir/brew_status"
       set snap_status "$temp_dir/snap_status"
+      set apt_deps "$temp_dir/apt_deps.txt"
+      set brew_deps "$temp_dir/brew_deps.txt"
+      set snap_deps "$temp_dir/snap_deps.txt"
 
       # Job 1: Install all APT dependencies in parallel
       if test (count $apt_dependencies) -gt 0
@@ -265,12 +268,12 @@ function cauldron_update -d 'Update Cauldron to the latest version'
             sudo apt install -y \$missing_deps >> '$apt_log' 2>&1
           end
 
-          # Log installed dependencies to database
+          # Collect dependency info to write to DB later (avoid concurrent DB writes)
           for dep in $apt_dependencies
             if type -q \$dep
               set VERSION (apt show \$dep 2>/dev/null | grep 'Version' | cut -d ':' -f 2 | tr -d ' ')
               set DATE (date)
-              sqlite3 '$CAULDRON_DATABASE' \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"
+              echo \"\$dep|\$VERSION|\$DATE\" >> '$apt_deps'
             else
               echo \"Failed to install: \$dep\" >> '$apt_log'
             end
@@ -296,12 +299,12 @@ function cauldron_update -d 'Update Cauldron to the latest version'
             brew install \$missing_deps >> '$brew_log' 2>&1
           end
 
-          # Log installed dependencies to database
+          # Collect dependency info to write to DB later (avoid concurrent DB writes)
           for dep in $brew_dependencies
             if type -q \$dep
               set VERSION (brew info \$dep 2>/dev/null | head -n 1 | grep -o '[0-9]\+\.[0-9]\+[^ ]*' | head -n 1)
               set DATE (date)
-              sqlite3 '$CAULDRON_DATABASE' \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"
+              echo \"\$dep|\$VERSION|\$DATE\" >> '$brew_deps'
             else
               echo \"Failed to install: \$dep\" >> '$brew_log'
             end
@@ -324,7 +327,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
             if type -q \$dep
               set VERSION (snap info \$dep 2>/dev/null | grep 'installed' | cut -d ':' -f 2 | tr -d ' ')
               set DATE (date)
-              sqlite3 '$CAULDRON_DATABASE' \"INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('\$dep', '\$VERSION', '\$DATE')\"
+              echo \"\$dep|\$VERSION|\$DATE\" >> '$snap_deps'
             else
               echo \"Failed to install: \$dep\" >> '$snap_log'
             end
@@ -367,6 +370,34 @@ function cauldron_update -d 'Update Cauldron to the latest version'
         if test $apt_done -eq 0 -o $brew_done -eq 0 -o $snap_done -eq 0
           sleep 0.5
         end
+      end
+
+      # Now write all dependency info to database (sequential to avoid deadlock)
+      if test -f "$apt_deps"
+        while read -l line
+          set -l parts (string split '|' $line)
+          if test (count $parts) -eq 3
+            sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$parts[1]', '$parts[2]', '$parts[3]')" 2>/dev/null
+          end
+        end < "$apt_deps"
+      end
+
+      if test -f "$brew_deps"
+        while read -l line
+          set -l parts (string split '|' $line)
+          if test (count $parts) -eq 3
+            sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$parts[1]', '$parts[2]', '$parts[3]')" 2>/dev/null
+          end
+        end < "$brew_deps"
+      end
+
+      if test -f "$snap_deps"
+        while read -l line
+          set -l parts (string split '|' $line)
+          if test (count $parts) -eq 3
+            sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$parts[1]', '$parts[2]', '$parts[3]')" 2>/dev/null
+          end
+        end < "$snap_deps"
       end
 
       echo ""
