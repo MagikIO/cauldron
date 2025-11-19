@@ -49,9 +49,9 @@ function familiars
     read -l -P "Press 'r' to roll a new name, 'e' to edit my name, or 'q' to quit: [r/e/q]" action
     switch $action
       case r
-        
         clear;
-        familiars -r
+        set -gx CAULDRON_FAMILIAR_NAME (new-name | string split " ")[1]
+        f-says "Hello, $username! I am "(bold $CAULDRON_FAMILIAR_NAME)", your new familiar!/n You can press 'r' to roll a new name for me, 'e' to edit my name, or 'q' if you're happy with the name and want to dismiss me for now." | rainbow-fish
       case e
         read -l -P "Enter a new name for me: " new_name
         set -Ux CAULDRON_FAMILIAR_NAME $new_name
