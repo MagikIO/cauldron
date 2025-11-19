@@ -393,6 +393,56 @@ verify_installation() {
     success "Installation verified ($func_count functions installed)"
 }
 
+# Run user preferences setup wizard
+run_setup_wizard() {
+    step "Setting up user preferences..."
+
+    # Set environment variables for Fish
+    export CAULDRON_PATH="$CAULDRON_INSTALL_DIR"
+    export CAULDRON_DATABASE="$CAULDRON_CONFIG_DIR/data/cauldron.db"
+
+    # Check if this is a CI/non-interactive environment
+    if [ -n "$CI" ] || [ -n "$CAULDRON_SKIP_SETUP" ] || [ ! -t 0 ]; then
+        info "Non-interactive environment detected, skipping setup wizard"
+        return 0
+    fi
+
+    # Run the setup wizard
+    if fish -c "
+        set -gx CAULDRON_PATH '$CAULDRON_INSTALL_DIR'
+        set -gx CAULDRON_DATABASE '$CAULDRON_CONFIG_DIR/data/cauldron.db'
+        source '$CAULDRON_CONFIG_DIR/functions/__cauldron_setup_wizard.fish'
+        __cauldron_setup_wizard
+    "; then
+        success "User preferences configured"
+    else
+        warn "Setup wizard skipped or failed. You can configure preferences later."
+        info "Run 'personality choose' to select a personality"
+        info "Run 'familiars' to name your familiar"
+    fi
+}
+
+# Fix shadowed variables
+fix_shadowed_variables() {
+    step "Checking for shadowed variables..."
+
+    # Set environment variables for Fish
+    export CAULDRON_PATH="$CAULDRON_INSTALL_DIR"
+    export CAULDRON_DATABASE="$CAULDRON_CONFIG_DIR/data/cauldron.db"
+
+    # Run the shadowed variables fix
+    if fish -c "
+        set -gx CAULDRON_PATH '$CAULDRON_INSTALL_DIR'
+        set -gx CAULDRON_DATABASE '$CAULDRON_CONFIG_DIR/data/cauldron.db'
+        source '$CAULDRON_CONFIG_DIR/functions/__fix_shadowed_variables.fish'
+        __fix_shadowed_variables
+    " 2>/dev/null; then
+        success "Variable scopes verified"
+    else
+        warn "Unable to check variable scopes. This is not critical."
+    fi
+}
+
 # Print success message
 print_success() {
     echo ""
@@ -441,7 +491,9 @@ main() {
     run_migrations        # Run migrations with the installed functions
     setup_fish_config
     install_node_dependencies
+    fix_shadowed_variables # Check and fix any shadowed variables
     verify_installation
+    run_setup_wizard      # Interactive setup for user preferences
     print_success
 }
 

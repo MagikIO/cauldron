@@ -98,8 +98,20 @@ function __build_personality_prompt --description "Build system prompt with pers
         set complexity $adaptive_parts[3]
     end
 
+    # Get familiar name from preferences
+    set -l familiar_name (sqlite3 "$CAULDRON_DATABASE" "
+        SELECT preference_value FROM user_preferences
+        WHERE preference_key = 'familiar_name' AND project_path IS NULL
+        LIMIT 1
+    " 2>/dev/null)
+
     # Build enhanced prompt with adaptive modifiers
     set -l enhanced_prompt "$base_prompt"
+
+    # Add familiar name if available
+    if test -n "$familiar_name"
+        set enhanced_prompt "$enhanced_prompt You are known as $familiar_name to this user."
+    end
 
     # Relationship-based modifications
     if test "$relationship_level" -ge 60
