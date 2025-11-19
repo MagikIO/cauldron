@@ -91,6 +91,7 @@ function ask -a query
   set system_prompt "$system_prompt\n\nYou respond to questions in markdown format. You have been asked: $query"
 
   set response_text ""
+  set -l response_file (mktemp)
 
   if set -q _flag_markdown
     set ai_response (curl -s -X POST http://localhost:11434/api/generate \
@@ -121,7 +122,7 @@ function ask -a query
             set done (echo $line | jq -r '.done')
 
             if test -n "$response"
-                set response_text "$response_text$response"
+                echo -n "$response" >> $response_file
                 echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream the response with newlines
             end
 
@@ -131,6 +132,7 @@ function ask -a query
         end
 
     echo ""  # Print a newline at the end
+    set response_text (cat $response_file)
   end
 
   # Save conversation to memory (unless --no-memory flag is set)
@@ -149,4 +151,7 @@ function ask -a query
           __track_interaction --failure 2>/dev/null
       end
   end
+
+  # Clean up temp file
+  rm -f $response_file
 end
