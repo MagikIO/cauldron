@@ -113,33 +113,33 @@ function __build_personality_prompt --description "Build system prompt with pers
         set patience (math "min(10, $patience + 2)")
         set verbosity (math "min(10, $verbosity + 1)")
         set enhanced_prompt "$enhanced_prompt\n\nThe user has encountered several errors recently. Be extra patient and provide more detailed, step-by-step guidance."
-    else if test (math "$error_rate > 0.5") -eq 1
+    else if test (awk -v rate="$error_rate" 'BEGIN {print (rate > 0.5)}') -eq 1
         set patience (math "min(10, $patience + 1)")
         set enhanced_prompt "$enhanced_prompt\n\nThe user is working through some challenges. Be supportive and provide clear explanations."
     end
 
     # Project complexity adaptations (MEDIUM PRIORITY)
-    if test (math "$complexity > 7") -eq 1
+    if test "$complexity" -gt 7
         set verbosity (math "min(10, $verbosity + 1)")
         set enhanced_prompt "$enhanced_prompt\n\nThis is a complex project. Provide more detailed explanations and consider edge cases."
     end
 
     # Apply trait modifiers to prompt
-    if test (math "$verbosity < 4") -eq 1
+    if test "$verbosity" -lt 4
         set enhanced_prompt "$enhanced_prompt\n\nBe concise and to the point. Keep responses brief."
-    else if test (math "$verbosity > 7") -eq 1
+    else if test "$verbosity" -gt 7
         set enhanced_prompt "$enhanced_prompt\n\nProvide detailed, thorough explanations."
     end
 
-    if test (math "$formality < 4") -eq 1
+    if test "$formality" -lt 4
         set enhanced_prompt "$enhanced_prompt\n\nUse casual, friendly language."
-    else if test (math "$formality > 7") -eq 1
+    else if test "$formality" -gt 7
         set enhanced_prompt "$enhanced_prompt\n\nMaintain a professional, formal tone."
     end
 
-    if test (math "$directness > 7") -eq 1
+    if test "$directness" -gt 7
         set enhanced_prompt "$enhanced_prompt\n\nProvide direct answers. Get straight to the point."
-    else if test (math "$directness < 4") -eq 1
+    else if test "$directness" -lt 4
         set enhanced_prompt "$enhanced_prompt\n\nAsk clarifying questions. Guide the user to discover solutions."
     end
 
