@@ -56,16 +56,49 @@ function ask -a query
       set conversation_history (__get_conversation_history $context_limit "session" 2>/dev/null)
   end
 
+  # Get user information from database
+  set -l user_name (sqlite3 "$CAULDRON_DATABASE" "
+      SELECT preference_value FROM user_preferences
+      WHERE preference_key = 'user_name' AND project_path IS NULL
+  " 2>/dev/null)
+
+  set -l user_pronouns (sqlite3 "$CAULDRON_DATABASE" "
+      SELECT preference_value FROM user_preferences
+      WHERE preference_key = 'user_pronouns' AND project_path IS NULL
+  " 2>/dev/null)
+
+  set -l familiar_name (sqlite3 "$CAULDRON_DATABASE" "
+      SELECT preference_value FROM user_preferences
+      WHERE preference_key = 'familiar_name' AND project_path IS NULL
+  " 2>/dev/null)
+
+  # Use environment variables as fallback
+  if test -z "$user_name"; and set -q CAULDRON_USER_NAME
+      set user_name $CAULDRON_USER_NAME
+  end
+
+  if test -z "$user_pronouns"; and set -q CAULDRON_USER_PRONOUNS
+      set user_pronouns $CAULDRON_USER_PRONOUNS
+  end
+
+  if test -z "$familiar_name"; and set -q CAULDRON_FAMILIAR_NAME
+      set familiar_name $CAULDRON_FAMILIAR_NAME
+  end
+
   # Build personality-aware system prompt
   set -l system_prompt
   if functions -q __build_personality_prompt
       set system_prompt (__build_personality_prompt)
   else
       # Fallback if personality system not available
-      set system_prompt "You are this user's (Antonio) familiar named Azul. The user is familiar with fish shell, typescript, and some C#. He uses He/Him pronouns, smokes cannabis, likes spicy foods, and is lactose-intolerant."
+      if test -n "$familiar_name"
+          set system_prompt "You are this user's familiar named $familiar_name."
+      else
+          set system_prompt "You are this user's familiar."
+      end
   end
 
-  # Add user profile context (can be moved to preferences later)
+  # Add user profile context
   set -l user_context (sqlite3 "$CAULDRON_DATABASE" "
       SELECT preference_value FROM user_preferences
       WHERE preference_key = 'user_profile' AND project_path IS NULL
@@ -73,9 +106,16 @@ function ask -a query
 
   if test -n "$user_context"
       set system_prompt "$system_prompt\n\nUser Profile: $user_context"
+  else if test -n "$user_name"
+      # Build user profile from individual preferences
+      set user_context "User: $user_name"
+      if test -n "$user_pronouns"
+          set user_context "$user_context ($user_pronouns)"
+      end
+      set system_prompt "$system_prompt\n\nUser Profile: $user_context"
   else
       # Default user context for backward compatibility
-      set system_prompt "$system_prompt\n\nUser: Antonio (He/Him). Familiar with fish shell, typescript, and C#. Smokes cannabis, likes spicy foods, lactose-intolerant."
+      set system_prompt "$system_prompt\n\nUser: Developer. Familiar with fish shell and programming."
   end
 
   # Add project context if available
