@@ -159,7 +159,8 @@ setup_repository() {
 create_directories() {
     step "Creating directory structure..."
 
-    mkdir -p "$CAULDRON_CONFIG_DIR"/{functions,data,tools,backups}
+    # Only create directories for user data (not functions - will be symlinked)
+    mkdir -p "$CAULDRON_CONFIG_DIR"/{data,backups}
 
     success "Directory structure created"
 }
@@ -247,31 +248,35 @@ copy_data_files() {
     success "Data files copied"
 }
 
-# Install Fish functions
+# Symlink Fish function directories
 install_functions() {
-    step "Installing Fish functions..."
+    step "Linking Fish function directories..."
 
-    # Copy all function files
-    local function_count=0
+    # List of directories to symlink
+    local dirs=("functions" "familiar" "UI" "text" "effects" "alias" "cli" "internal" "tools" "packages" "config" "setup" "update" "integrations" "docs")
+    local linked_count=0
 
-    for func_file in "$CAULDRON_INSTALL_DIR"/functions/*.fish; do
-        if [ -f "$func_file" ]; then
-            cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
-            ((function_count++))
+    for dir in "${dirs[@]}"; do
+        local source_dir="$CAULDRON_INSTALL_DIR/$dir"
+        local target_link="$CAULDRON_CONFIG_DIR/$dir"
+
+        # Only create symlink if source directory exists
+        if [ -d "$source_dir" ]; then
+            # Remove existing symlink or directory if it exists
+            if [ -L "$target_link" ] || [ -d "$target_link" ]; then
+                rm -rf "$target_link"
+            fi
+
+            # Create symlink
+            ln -sf "$source_dir" "$target_link"
+            ((linked_count++))
         fi
     done
 
-    # Copy familiar directory functions if they exist
-    if [ -d "$CAULDRON_INSTALL_DIR/familiar" ]; then
-        for func_file in "$CAULDRON_INSTALL_DIR"/familiar/*.fish; do
-            if [ -f "$func_file" ]; then
-                cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
-                ((function_count++))
-            fi
-        done
-    fi
+    # Count functions for verification
+    local func_count=$(find "$CAULDRON_CONFIG_DIR/functions" -name "*.fish" 2>/dev/null | wc -l)
 
-    success "Installed $function_count functions"
+    success "Linked $linked_count directories ($func_count functions available)"
 }
 
 # Setup Fish configuration
@@ -369,18 +374,20 @@ verify_installation() {
         errors+=("Database not found")
     fi
 
-    # Check functions directory
-    if [ ! -d "$CAULDRON_CONFIG_DIR/functions" ]; then
-        errors+=("Functions directory not found")
+    # Check functions symlink exists and points to valid directory
+    if [ ! -L "$CAULDRON_CONFIG_DIR/functions" ]; then
+        errors+=("Functions symlink not found")
+    elif [ ! -d "$CAULDRON_CONFIG_DIR/functions" ]; then
+        errors+=("Functions symlink is broken")
     fi
 
-    # Check function count
+    # Check function count (via symlink)
     local func_count=$(find "$CAULDRON_CONFIG_DIR/functions" -name "*.fish" 2>/dev/null | wc -l)
     if [ "$func_count" -lt 10 ]; then
-        errors+=("Too few functions installed (found $func_count)")
+        errors+=("Too few functions available (found $func_count)")
     fi
 
-    # Check for critical functions (including familiar functions)
+    # Check for critical functions (via symlink)
     local critical_functions=("ask.fish" "f-thinks.fish" "f-says.fish" "cauldron_update.fish" "cauldron_repair.fish")
     local missing_functions=()
 
@@ -392,6 +399,11 @@ verify_installation() {
 
     if [ ${#missing_functions[@]} -ne 0 ]; then
         errors+=("Missing critical functions: ${missing_functions[*]}")
+    fi
+
+    # Check familiar symlink
+    if [ ! -L "$CAULDRON_CONFIG_DIR/familiar" ]; then
+        errors+=("Familiar symlink not found")
     fi
 
     # Check data files
@@ -411,7 +423,7 @@ verify_installation() {
         exit 1
     fi
 
-    success "Installation verified ($func_count functions installed)"
+    success "Installation verified ($func_count functions available via symlinks)"
 }
 
 # Run user preferences setup wizard

@@ -107,7 +107,7 @@ function cauldron_update --description "Update Cauldron to the latest version"
     # Create temp directory for parallel job status
     set -l temp_dir (mktemp -d)
     set -l functions_dir "$HOME/.config/cauldron/functions"
-    mkdir -p "$functions_dir"
+    # Note: functions_dir is now a symlink, no need to create it
 
     # Job 1: Core update chain (functions → data → migrations → personality)
     # This must be sequential due to dependencies
@@ -115,27 +115,11 @@ function cauldron_update --description "Update Cauldron to the latest version"
     set -l core_log "$temp_dir/core_log"
 
     fish -c "
-        set -l updated_count 0
+        # Functions are now symlinked - no copying needed!
+        # Count available functions for reporting
+        set -l updated_count (find '$CAULDRON_PATH/functions' -name '*.fish' 2>/dev/null | wc -l)
 
-        # Copy functions
-        for func_file in '$CAULDRON_PATH'/functions/*.fish
-            if test -f \$func_file
-                cp -f \$func_file '$functions_dir/' 2>/dev/null
-                set updated_count (math \$updated_count + 1)
-            end
-        end
-
-        # Copy from familiar/ directory if it exists
-        if test -d '$CAULDRON_PATH/familiar'
-            for func_file in '$CAULDRON_PATH'/familiar/*.fish
-                if test -f \$func_file
-                    cp -f \$func_file '$functions_dir/' 2>/dev/null
-                    set updated_count (math \$updated_count + 1)
-                end
-            end
-        end
-
-        echo \"functions:\$updated_count\" >> '$core_log'
+        echo \"functions:\$updated_count (via symlink)\" >> '$core_log'
 
         # Copy data files
         set -l data_dir (dirname '$CAULDRON_DATABASE')
