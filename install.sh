@@ -113,19 +113,6 @@ setup_repository() {
         else
             warn "Failed to update repository, continuing with existing version"
         fi
-
-        # Verify repository integrity after update
-        if [ ! -f "$CAULDRON_INSTALL_DIR/data/schema.sql" ]; then
-            warn "Repository update incomplete - schema.sql is missing!"
-            info "Attempting to restore from remote..."
-            git checkout "$CAULDRON_BRANCH" -- data/schema.sql 2>/dev/null || true
-
-            if [ ! -f "$CAULDRON_INSTALL_DIR/data/schema.sql" ]; then
-                error "Unable to restore schema.sql. Repository may be corrupted."
-                error "Please remove $CAULDRON_INSTALL_DIR and run install.sh again."
-                exit 1
-            fi
-        fi
     else
         info "Installing Cauldron to $CAULDRON_INSTALL_DIR"
 
@@ -144,14 +131,6 @@ setup_repository() {
         fi
 
         cd "$CAULDRON_INSTALL_DIR"
-    fi
-
-    # Verify that critical repository files were cloned successfully
-    if [ ! -f "$CAULDRON_INSTALL_DIR/data/schema.sql" ]; then
-        error "Repository clone incomplete - schema.sql is missing!"
-        error "This may indicate a network issue or corrupted repository."
-        error "Please try running the installation again."
-        exit 1
     fi
 }
 

@@ -32,10 +32,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     set -eg CAULDRON_PATH
   end
 
-  # CAULDRON_PATH should point to the install directory (git repo)
-  # Default to $HOME/.cauldron to align with install.sh
   if not set -q CAULDRON_PATH
-    set -Ux CAULDRON_PATH $HOME/.cauldron
+    set -Ux CAULDRON_PATH $HOME/.config/cauldron
   end
 
   # Make sure the path exists
@@ -43,9 +41,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     echo " You must have Cauldron installed to update it, please run the install script instead"
     return 1
   end
-
-  # Config directory for user data (separate from install directory)
-  set CAULDRON_CONFIG_DIR $HOME/.config/cauldron
 
   # Make sure all vars are set
   if not set -q __CAULDRON_DOCUMENTATION_PATH
@@ -61,10 +56,10 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
   
   if not set -q CAULDRON_DATABASE
-    set -Ux CAULDRON_DATABASE $CAULDRON_CONFIG_DIR/data/cauldron.db
-
+    set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
+  
     if not test -f $CAULDRON_DATABASE
-      mkdir -p $CAULDRON_CONFIG_DIR/data
+      mkdir -p $CAULDRON_PATH/data
       touch $CAULDRON_DATABASE
     end
   end
@@ -146,26 +141,29 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     return 0;
   end
 
-  # User data (databases) are in the config directory, not the install directory
-  # Repository data (schema.sql, etc.) are in the install directory
-  # So we don't need to backup anything - user data stays in config dir!
+  # First we need to create a temporary directory to back up your Cauldron data folder
+  set tmp_dir (mktemp -d)
 
-  # Now we update the install directory by removing and re-cloning
+  # Next we need to backup their data folder by copying it to a temp folder
+  if test -d $CAULDRON_PATH/data
+    cp -r $CAULDRON_PATH/data/* $tmp_dir/
+  end
+
+  # Now we remove everything in the base folder so we can clone the latest
   rm -rf $CAULDRON_PATH/
   mkdir -p $CAULDRON_PATH
 
   # Now we clone the latest version of the repo
   git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
 
-  # Verify that critical repository files exist after cloning
-  if not test -f $CAULDRON_PATH/data/schema.sql
-    if set -qg CAULDRON_FAMILIAR
-      set -eg CAULDRON_FAMILIAR
-    end
-    set -Ux CAULDRON_FAMILIAR suse
-    familiar "Failed to clone repository correctly - schema.sql is missing! Please check your internet connection and try again."
-    return 1
+  # Now we copy the data folder back
+  if test -d $tmp_dir
+    # Copy the data folder back
+    cp -r $tmp_dir/* $CAULDRON_PATH/data/
   end
+
+  # Now we remove the temp folder
+  rm -rf $tmp_dir
 
   # Re-run schema and update migrations with the newly cloned files
   # This ensures any new schema changes or migrations are applied to the restored database
@@ -198,20 +196,9 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   git config --global alias.visual-checkout '!fish $CAULDRON_PATH/update/visual_git_checkout.fish'
 
-  # Copy data files from install dir to config dir
-  cp -f $CAULDRON_PATH/data/palettes.json $CAULDRON_CONFIG_DIR/data/
-  cp -f $CAULDRON_PATH/data/spinners.json $CAULDRON_CONFIG_DIR/data/
-
-  # Copy cowsay files
-  for cow_file in $CAULDRON_PATH/data/*.cow
-    if test -f $cow_file
-      cp -f $cow_file $CAULDRON_CONFIG_DIR/data/
-    end
-  end
-
   # We need to make sure these variables are set
-  set -Ux CAULDRON_PALETTES $CAULDRON_CONFIG_DIR/data/palettes.json
-  set -Ux CAULDRON_SPINNERS $CAULDRON_CONFIG_DIR/data/spinners.json
+  set -Ux CAULDRON_PALETTES $CAULDRON_PATH/data/palettes.json
+  set -Ux CAULDRON_SPINNERS $CAULDRON_PATH/data/spinners.json
 
   set OS (uname -s)
 
