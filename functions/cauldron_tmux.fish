@@ -581,6 +581,27 @@ function __cauldron_tmux_remove --description "Remove TMUX installation and conf
         end
     end
 
+    # Remove fish tmux plugin if it exists
+    echo ""
+    if test -f ~/.config/fish/conf.d/tmux.fish
+        echo "Removing fish tmux plugin..."
+
+        # Try to remove via fisher first
+        if command -q fisher
+            if grep -q "budimanjojo/tmux.fish" ~/.config/fish/fish_plugins 2>/dev/null
+                fisher remove budimanjojo/tmux.fish
+                echo "✓ Removed tmux.fish plugin via fisher"
+            end
+        else
+            # Manually remove tmux plugin files
+            rm -f ~/.config/fish/conf.d/tmux.fish
+            rm -f ~/.config/fish/conf.d/tmux.only.conf
+            rm -f ~/.config/fish/conf.d/tmux.extra.conf
+            rm -f ~/.config/fish/conf.d/tmux_abbrs.fish
+            echo "✓ Removed tmux fish plugin files"
+        end
+    end
+
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  TMUX Removal Complete"
@@ -588,6 +609,8 @@ function __cauldron_tmux_remove --description "Remove TMUX installation and conf
     echo ""
     echo "Backups are still available at:"
     echo "  ~/.config/cauldron/backups/tmux/"
+    echo ""
+    echo "Note: You may need to run 'exec fish' to reload your shell"
     echo ""
 
     return 0
