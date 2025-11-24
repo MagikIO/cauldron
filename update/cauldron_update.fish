@@ -483,14 +483,47 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       # Create temp directory for parallel job status
       set temp_dir (mktemp -d)
       set apt_log "$temp_dir/apt.log"
-      set brew_log "$temp_dir/brew.log"
       set snap_log "$temp_dir/snap.log"
       set apt_status "$temp_dir/apt_status"
-      set brew_status "$temp_dir/brew_status"
       set snap_status "$temp_dir/snap_status"
       set apt_deps "$temp_dir/apt_deps.txt"
-      set brew_deps "$temp_dir/brew_deps.txt"
       set snap_deps "$temp_dir/snap_deps.txt"
+
+      echo ""
+      echo "Installing dependencies..."
+      echo "  APT packages: $apt_dependencies"
+      echo "  Brew packages: $brew_dependencies"
+      echo "  Snap packages: $snap_dependencies"
+      echo ""
+
+      # Install Brew dependencies first (synchronously, with terminal output)
+      # Brew is run synchronously because it has issues running in background
+      if test (count $brew_dependencies) -gt 0
+        echo "→ Installing Brew packages..."
+        set -l missing_deps
+        for dep in $brew_dependencies
+          if not type -q $dep
+            set -a missing_deps $dep
+          end
+        end
+
+        if test (count $missing_deps) -gt 0
+          # Run brew synchronously with normal terminal output
+          set -x HOMEBREW_NO_AUTO_UPDATE 1
+          brew install $missing_deps
+        end
+
+        # Save brew dependency info to database
+        for dep in $brew_dependencies
+          if type -q $dep
+            set VERSION (brew info $dep 2>/dev/null | head -n 1 | grep -o '[0-9]\+\.[0-9]\+[^ ]*' | head -n 1)
+            set DATE (date)
+            sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$dep', '$VERSION', '$DATE')" 2>/dev/null
+          end
+        end
+        echo "  ✓ Brew packages installed"
+        echo ""
+      end
 
       # Job 1: Install all APT dependencies in parallel
       if test (count $apt_dependencies) -gt 0
@@ -523,42 +556,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
         echo 'done' > $apt_status
       end
 
-      # Job 2: Install all Brew dependencies in parallel
-      if test (count $brew_dependencies) -gt 0
-        fish -c "
-          # Make Homebrew non-interactive for background execution
-          set -x HOMEBREW_NO_AUTO_UPDATE 1
-          set -x HOMEBREW_NO_INSTALL_CLEANUP 1
-
-          set -l missing_deps
-          for dep in $brew_dependencies
-            if not type -q \$dep
-              set -a missing_deps \$dep
-            end
-          end
-
-          if test (count \$missing_deps) -gt 0
-            brew install \$missing_deps >> '$brew_log' 2>&1 < /dev/null
-          end
-
-          # Collect dependency info to write to DB later (avoid concurrent DB writes)
-          for dep in $brew_dependencies
-            if type -q \$dep
-              set VERSION (brew info \$dep 2>/dev/null | head -n 1 | grep -o '[0-9]\+\.[0-9]\+[^ ]*' | head -n 1)
-              set DATE (date)
-              echo \"\$dep|\$VERSION|\$DATE\" >> '$brew_deps'
-            else
-              echo \"Failed to install: \$dep\" >> '$brew_log'
-            end
-          end
-          echo 'done' > '$brew_status'
-        " < /dev/null &
-        set brew_pid $last_pid
-      else
-        echo 'done' > $brew_status
-      end
-
-      # Job 3: Install all Snap dependencies in parallel
+      # Job 2: Install all Snap dependencies in parallel
       if test (count $snap_dependencies) -gt 0
         fish -c "
           for dep in $snap_dependencies
@@ -581,31 +579,20 @@ function cauldron_update -d 'Update Cauldron to the latest version'
         echo 'done' > $snap_status
       end
 
-      # Show progress while waiting for all package managers to complete
+      # Show progress while waiting for APT and Snap to complete
       set apt_done 0
-      set brew_done 0
       set snap_done 0
 
-      echo ""
-      echo "Installing dependencies in parallel..."
-      echo "  APT packages: $apt_dependencies"
-      echo "  Brew packages: $brew_dependencies"
-      echo "  Snap packages: $snap_dependencies"
-      echo ""
+      echo "⏳ Installing APT and Snap packages in parallel..."
 
       # Wait for background jobs with timeout protection
       set -l max_iterations 600  # 5 minutes max (600 * 0.5s)
       set -l iterations 0
 
-      while test $apt_done -eq 0 -o $brew_done -eq 0 -o $snap_done -eq 0
+      while test $apt_done -eq 0 -o $snap_done -eq 0
         if test $apt_done -eq 0 -a -f "$apt_status"
           set apt_done 1
           echo "  ✓ APT dependencies completed"
-        end
-
-        if test $brew_done -eq 0 -a -f "$brew_status"
-          set brew_done 1
-          echo "  ✓ Brew dependencies completed"
         end
 
         if test $snap_done -eq 0 -a -f "$snap_status"
@@ -613,19 +600,16 @@ function cauldron_update -d 'Update Cauldron to the latest version'
           echo "  ✓ Snap dependencies completed"
         end
 
-        if test $apt_done -eq 0 -o $brew_done -eq 0 -o $snap_done -eq 0
+        if test $apt_done -eq 0 -o $snap_done -eq 0
           sleep 0.5
           set iterations (math $iterations + 1)
-          
+
           # Timeout protection
           if test $iterations -ge $max_iterations
             echo ""
             echo "⚠ Warning: Dependency installation timed out after 5 minutes"
             if test $apt_done -eq 0
               echo "  APT job may still be running in background"
-            end
-            if test $brew_done -eq 0
-              echo "  Brew job may still be running in background"
             end
             if test $snap_done -eq 0
               echo "  Snap job may still be running in background"
@@ -636,6 +620,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       end
 
       # Now write all dependency info to database (sequential to avoid deadlock)
+      # Note: Brew dependencies are already written to DB synchronously above
       if test -f "$apt_deps"
         while read -l line
           set -l parts (string split '|' $line)
@@ -643,15 +628,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
             sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$parts[1]', '$parts[2]', '$parts[3]')" 2>/dev/null
           end
         end < "$apt_deps"
-      end
-
-      if test -f "$brew_deps"
-        while read -l line
-          set -l parts (string split '|' $line)
-          if test (count $parts) -eq 3
-            sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO dependencies (name, version, date) VALUES ('$parts[1]', '$parts[2]', '$parts[3]')" 2>/dev/null
-          end
-        end < "$brew_deps"
       end
 
       if test -f "$snap_deps"
@@ -672,14 +648,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
           echo ""
           echo "⚠ APT warnings/errors:"
           grep "Failed to install" "$apt_log"
-        end
-      end
-
-      if test -f "$brew_log" -a -s "$brew_log"
-        if grep -q "Failed to install" "$brew_log"
-          echo ""
-          echo "⚠ Brew warnings/errors:"
-          grep "Failed to install" "$brew_log"
         end
       end
 
