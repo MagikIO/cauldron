@@ -299,6 +299,17 @@ setup_fish_config() {
         sed -i.bak "s|set -gx CAULDRON_SPINNERS.*|set -gx CAULDRON_SPINNERS \"$CAULDRON_CONFIG_DIR/data/spinners.json\"|g" "$fish_config"
         sed -i.bak "s|set -gx CAULDRON_INTERNAL_TOOLS.*|set -gx CAULDRON_INTERNAL_TOOLS \"$CAULDRON_INSTALL_DIR/tools\"|g" "$fish_config"
 
+        # Add familiar directory to fish_function_path if not already there
+        if ! grep -q "$CAULDRON_CONFIG_DIR/familiar" "$fish_config"; then
+            # Find the line with functions path and add familiar after it
+            sed -i.bak "/fish_function_path.*${CAULDRON_CONFIG_DIR//\//\\/}\/functions/a\\
+\\
+# Add familiar directory to Fish function path (for f-says, f-thinks, etc.)\\
+if not contains \"$CAULDRON_CONFIG_DIR/familiar\" \\\$fish_function_path\\
+    set -gx fish_function_path \"$CAULDRON_CONFIG_DIR/familiar\" \\\$fish_function_path\\
+end" "$fish_config"
+        fi
+
         success "Fish configuration paths updated"
     else
         info "Adding Cauldron to Fish configuration..."
@@ -315,6 +326,11 @@ set -gx CAULDRON_INTERNAL_TOOLS "$CAULDRON_INSTALL_DIR/tools"
 # Add Cauldron functions to Fish function path
 if not contains "$CAULDRON_CONFIG_DIR/functions" \$fish_function_path
     set -gx fish_function_path "$CAULDRON_CONFIG_DIR/functions" \$fish_function_path
+end
+
+# Add familiar directory to Fish function path (for f-says, f-thinks, etc.)
+if not contains "$CAULDRON_CONFIG_DIR/familiar" \$fish_function_path
+    set -gx fish_function_path "$CAULDRON_CONFIG_DIR/familiar" \$fish_function_path
 end
 
 # Initialize memory system
