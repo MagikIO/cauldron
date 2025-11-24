@@ -33,7 +33,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
 
   if not set -q CAULDRON_PATH
-    set -Ux CAULDRON_PATH $HOME/.config/cauldron
+    set -Ux CAULDRON_PATH $HOME/.cauldron
   end
 
   # Make sure the path exists
