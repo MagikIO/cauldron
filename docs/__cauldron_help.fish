@@ -195,18 +195,53 @@ function __cauldron_help
         echo $str | tr '[:upper:]' '[:lower:]'
     end
 
+    # Initialize state file with unique path
+    set -l state_file /tmp/cauldron_help_state_(echo $fish_pid)
+    
     if set -q _flag_category
         set -gx __doc_category $_flag_category
+        echo $_flag_category > $state_file
     else
         set -gx __doc_category Functions
+        echo Functions > $state_file
     end
 
-    function change_category -a index
-        # if the index is -1 we move back a category, if it's 1 we move forward
-        set -l current_index (math (math --scale 0 (math --scale 0 (string match -r -- '.*\t' $__doc_category) + $index) % (count $doc_categories)))
-        set -gx __doc_category (string join " " $doc_categories[$current_index])
-        set __lower_case_category (to_lower_case $__doc_category)
-        set -gx __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
+    # Helper function to cycle through categories
+    function __help_cycle_category -a direction state_file
+        set -l doc_categories Functions Text Setup Alias UI Internal
+        set -l current_category (cat $state_file)
+        
+        # Find current index (1-based)
+        set -l current_idx 1
+        for i in (seq (count $doc_categories))
+            if test $doc_categories[$i] = $current_category
+                set current_idx $i
+                break
+            end
+        end
+        
+        # Calculate new index (with wraparound)
+        set -l new_idx (math "($current_idx + $direction - 1) % (count $doc_categories) + 1")
+        set -l new_category $doc_categories[$new_idx]
+        
+        # Write new state
+        echo $new_category > $state_file
+    end
+
+    # Helper function to generate documentation list for current category
+    function __help_list_docs -a state_file cauldron_path
+        set -l category (cat $state_file)
+        set -l lower_category (string lower $category)
+        set -l doc_path "$cauldron_path/docs/$lower_category"
+        
+        if not test -d "$doc_path"
+            return 1
+        end
+        
+        find "$doc_path" -type f -name '*.md' 2>/dev/null | while read path
+            set -l name (string replace -r '.*/' '' $path | string replace -r '\.md$' '' )
+            echo -e "$name\t$path"
+        end
     end
 
     # Documentation Category
@@ -233,33 +268,10 @@ function __cauldron_help
         --align center --width $term_width --margin "1 2" --padding "2 4" \
         "Cauldron Documentation - $__doc_category" "Press Enter to open the documentation in full-screen" \
         "Press Ctrl-e to edit the documentation, or Ctrl-f to preview with bat" \
-        "Change documentation categories with ctrl+n or ctrl+m to cycle the documentation category"
+        "Change documentation categories with Ctrl+n (next) or Ctrl+p (previous)"
 
-    # Generate a list of markdown files with their paths
-    set -l mdFiles (find $__CAULDRON_DOC_CATEGORY_PATH -type f -name '*.md')
-
-    function extract_file_names
-        for path in $argv
-            # Remove the directory path
-            set filename (string replace -r '.*/' '' $path)
-            # Remove the .md extension
-            set filename (string replace -r '\.md$' '' $filename)
-            echo $filename
-        end
-    end
-
-    set nameList (extract_file_names $mdFiles)
-    # Initialize displayList as an empty list
-    set displayList
-
-    for idx in (seq (count $mdFiles))
-        # Construct displayList with name and path as "name###path"
-        # Do not add a newline character here
-        set displayList $displayList (string trim (string join "\t" $nameList[$idx] $mdFiles[$idx]))
-    end
-
-    # Join the displayList entries with a newline character
-    set displayList (string join "\n" $displayList)
+    # Generate initial list
+    set -l displayList (__help_list_docs $state_file $CAULDRON_PATH)
 
     set -x CLICOLOR_FORCE 1
     set -x GLAMOUR_STYLE dark
@@ -274,10 +286,13 @@ function __cauldron_help
             --bind 'enter:execute(glow {2})' \
             --bind 'ctrl-e:execute($EDITOR {2})' \
             --bind 'ctrl-f:execute(glow {2} | bat -l md --paging=always)' \
-            --bind 'ctrl-n:execute(change_category -1; change-prompt($__doc_category> ); reload)' \
-            --bind 'ctrl-m:execute(change_category 1; change-prompt($__doc_category> ); reload)' \
-            --prompt 'Function> ' \
-            --header 'Enter to open full-screen, Ctrl-e: Edit Documentation, Ctrl-f: Preview with bat' \
+            --bind "ctrl-n:execute-silent(__help_cycle_category 1 $state_file)+reload(__help_list_docs $state_file $CAULDRON_PATH)" \
+            --bind "ctrl-p:execute-silent(__help_cycle_category -1 $state_file)+reload(__help_list_docs $state_file $CAULDRON_PATH)" \
+            --prompt "$__doc_category> " \
+            --header 'Enter: View, Ctrl-e: Edit, Ctrl-f: Preview, Ctrl-n: Next Category, Ctrl-p: Prev Category' \
             --ansi \
             --height 80%
+    
+    # Cleanup state file
+    rm -f $state_file
 end
