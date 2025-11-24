@@ -92,27 +92,23 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         end
     end
 
-    # Check 5: Verify functions symlink is valid
-    echo "→ Checking Fish functions symlink..."
+    # Check 5: Verify functions are installed
+    echo "→ Checking Fish functions..."
     set -l functions_dir "$HOME/.config/cauldron/functions"
 
-    if not test -L "$functions_dir"
+    if not test -d "$functions_dir"
         set issues_found (math $issues_found + 1)
-        set -a issues "Functions symlink missing: $functions_dir"
-        echo "  ✗ Functions symlink not found"
-    else if not test -d "$functions_dir"
-        set issues_found (math $issues_found + 1)
-        set -a issues "Functions symlink broken: $functions_dir"
-        echo "  ✗ Functions symlink is broken"
+        set -a issues "Functions directory missing: $functions_dir"
+        echo "  ✗ Functions directory not found"
     else
         set -l func_count (ls "$functions_dir"/*.fish 2>/dev/null | wc -l)
 
         if test $func_count -lt 10
             set issues_found (math $issues_found + 1)
-            set -a issues "Too few functions available (found $func_count, expected 30+)"
-            echo "  ✗ Only $func_count functions available (expected 30+)"
+            set -a issues "Too few functions installed (found $func_count, expected 30+)"
+            echo "  ✗ Only $func_count functions found (expected 30+)"
         else
-            # Check for critical functions (via symlink)
+            # Check for critical functions (including familiar functions)
             set -l critical_functions ask.fish f-thinks.fish f-says.fish cauldron_update.fish cauldron_repair.fish
             set -l missing_functions ()
 
@@ -256,35 +252,31 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         end
     end
 
-    # Fix 3: Recreate function symlinks
+    # Fix 3: Reinstall functions
     if string match -q "*function*" -- $issues
-        echo "  → Recreating function symlinks..."
+        echo "  → Reinstalling functions..."
 
-        # List of directories to symlink
-        set -l dirs functions familiar UI text effects alias cli internal tools packages config setup update integrations docs
-        set -l linked_count 0
+        mkdir -p "$functions_dir"
 
-        for dir in $dirs
-            set -l source_dir "$CAULDRON_PATH/$dir"
-            set -l target_link "$HOME/.config/cauldron/$dir"
-
-            # Only create symlink if source directory exists
-            if test -d "$source_dir"
-                # Remove existing symlink or directory if it exists
-                if test -L "$target_link"; or test -d "$target_link"
-                    rm -rf "$target_link"
-                end
-
-                # Create symlink
-                ln -sf "$source_dir" "$target_link"
-                set linked_count (math $linked_count + 1)
+        set -l copied_count 0
+        for func_file in "$CAULDRON_PATH"/functions/*.fish
+            if test -f "$func_file"
+                cp -f "$func_file" "$functions_dir/"
+                set copied_count (math $copied_count + 1)
             end
         end
 
-        # Count functions for verification
-        set -l func_count (find "$HOME/.config/cauldron/functions" -name '*.fish' 2>/dev/null | wc -l)
+        # Copy familiar directory functions if they exist
+        if test -d "$CAULDRON_PATH/familiar"
+            for func_file in "$CAULDRON_PATH"/familiar/*.fish
+                if test -f "$func_file"
+                    cp -f "$func_file" "$functions_dir/"
+                    set copied_count (math $copied_count + 1)
+                end
+            end
+        end
 
-        echo "    ✓ Recreated $linked_count symlinks ($func_count functions available)"
+        echo "    ✓ Installed $copied_count functions"
         set issues_fixed (math $issues_fixed + 1)
     end
 
