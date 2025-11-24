@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function cauldron
-  set -l func_version "1.2.2"
+  set -l func_version "1.3.0"
   set -l cauldron_category "CLI"
   if not set -q CAULDRON_PATH
     set -Ux CAULDRON_PATH $HOME/.cauldron
