@@ -361,7 +361,7 @@ set -gx CAULDRON_INTERNAL_TOOLS "$CAULDRON_INSTALL_DIR/tools"
 
 # Add Cauldron functions to Fish function path
 if not contains "$CAULDRON_CONFIG_DIR/functions" \$fish_function_path
-    set -gx fish_function_path "$CAULDRON_CONFIG_DIR/functions" \$fish_function_path
+    set -gx fish_function_path \$fish_function_path "$CAULDRON_CONFIG_DIR/functions"
 end
 
 # Initialize memory system
