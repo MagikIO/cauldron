@@ -131,6 +131,3 @@ dist
 
 
 cauldron.db
-
-# Backups should only be in ~/.config/cauldron/data/backups/, not in source repo
-data/backups/
