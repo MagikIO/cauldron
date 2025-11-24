@@ -4,7 +4,7 @@ function cauldron
   set -l func_version "1.1.0"
   set -l cauldron_category "CLI"
   if not set -q CAULDRON_PATH
-    set -Ux CAULDRON_PATH $HOME/.config/cauldron
+    set -Ux CAULDRON_PATH $HOME/.cauldron
   end
   if not set -q __CAULDRON_DOCUMENTATION_PATH
     set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
