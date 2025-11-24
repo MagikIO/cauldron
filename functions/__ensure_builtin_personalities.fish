@@ -2,7 +2,7 @@ function __ensure_builtin_personalities --description "Ensure all built-in perso
     # Define all 6 built-in personalities with their data
     # Using INSERT OR IGNORE to safely handle existing entries
 
-    sqlite3 "$CAULDRON_DATABASE" <<'EOF'
+    sqlite3 "$CAULDRON_DATABASE" "
 -- Wise Mentor
 INSERT OR IGNORE INTO personalities (name, display_name, description, system_prompt, is_builtin, created_at, updated_at)
 VALUES (
@@ -147,6 +147,6 @@ INSERT OR IGNORE INTO personality_traits (personality_id, trait_name, trait_valu
 SELECT id, 'patience', 9.0, 'Tolerance for mistakes and learning (0-10)' FROM personalities WHERE name = 'pair_programmer';
 INSERT OR IGNORE INTO personality_traits (personality_id, trait_name, trait_value, description)
 SELECT id, 'directness', 6.0, 'Direct answers vs guiding questions (0-10)' FROM personalities WHERE name = 'pair_programmer';
-EOF
+"
 
 end

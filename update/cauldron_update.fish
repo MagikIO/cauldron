@@ -557,6 +557,9 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       # Job 3: Install all Snap dependencies in parallel
       if test (count $snap_dependencies) -gt 0
         fish -c "
+          # Refresh sudo credentials for this background job
+          sudo -v
+          
           for dep in $snap_dependencies
             if not type -q \$dep
               sudo snap install \$dep >> '$snap_log' 2>&1
@@ -589,6 +592,10 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       echo "  Snap packages: $snap_dependencies"
       echo ""
 
+      # Wait for background jobs with timeout protection
+      set -l max_iterations 600  # 5 minutes max (600 * 0.5s)
+      set -l iterations 0
+
       while test $apt_done -eq 0 -o $brew_done -eq 0 -o $snap_done -eq 0
         if test $apt_done -eq 0 -a -f "$apt_status"
           set apt_done 1
@@ -607,6 +614,23 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
         if test $apt_done -eq 0 -o $brew_done -eq 0 -o $snap_done -eq 0
           sleep 0.5
+          set iterations (math $iterations + 1)
+          
+          # Timeout protection
+          if test $iterations -ge $max_iterations
+            echo ""
+            echo "⚠ Warning: Dependency installation timed out after 5 minutes"
+            if test $apt_done -eq 0
+              echo "  APT job may still be running in background"
+            end
+            if test $brew_done -eq 0
+              echo "  Brew job may still be running in background"
+            end
+            if test $snap_done -eq 0
+              echo "  Snap job may still be running in background"
+            end
+            break
+          end
         end
       end
 
