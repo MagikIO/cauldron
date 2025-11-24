@@ -557,9 +557,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       # Job 3: Install all Snap dependencies in parallel
       if test (count $snap_dependencies) -gt 0
         fish -c "
-          # Refresh sudo credentials for this background job
-          sudo -v
-          
           for dep in $snap_dependencies
             if not type -q \$dep
               sudo snap install \$dep >> '$snap_log' 2>&1
