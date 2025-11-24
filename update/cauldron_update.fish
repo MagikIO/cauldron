@@ -1,9 +1,9 @@
 #!/usr/bin/env fish
 
 function cauldron_update -d 'Update Cauldron to the latest version'
-  set -l func_version "1.0.0"
+  set -l func_version "2.0.0"
   set cauldron_category "Update"
-  set -l options v/version h/help
+  set -l options v/version h/help c/check-only b/branch=
   argparse -n cauldron_update $options -- $argv
 
   # if they asked the version just return it
@@ -14,15 +14,25 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # if they asked for help just return it
   if set -q _flag_help
-    echo "Usage: cauldron_update"
+    echo "Usage: cauldron_update [OPTIONS]"
     echo "Version: $func_version"
     echo "Update Cauldron to the latest version"
     echo
     echo "Options:"
-    echo "  -v, --version  Show the version number"
-    echo "  -h, --help     Show this help message"
+    echo "  -v, --version       Show the version number"
+    echo "  -h, --help          Show this help message"
+    echo "  -c, --check-only    Check for updates without applying"
+    echo "  -b, --branch NAME   Update to specific branch (default: main)"
+    echo
+    echo "Examples:"
+    echo "  cauldron_update                 # Update to latest version"
+    echo "  cauldron_update --check-only    # Check for updates"
+    echo "  cauldron_update --branch dev    # Update to dev branch"
     return 0
   end
+
+  # Set branch (default to main if not specified)
+  set -l branch (set -q _flag_branch && echo $_flag_branch || echo "main")
 
   # Get sudo so we can update
   sudo -v
@@ -131,133 +141,302 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     mkdir -p $CAULDRON_INTERNAL_TOOLS
   end
 
-  if test -f $CAULDRON_PATH/data/schema.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql 2> /dev/null
+  # ============================================================================
+  # GIT-BASED UPDATE WORKFLOW
+  # Use git to safely update instead of destructive rm+clone
+  # ============================================================================
+
+  echo "🔮 Cauldron Update System"
+  echo ""
+
+  # Verify we're in a git repository
+  if not test -d "$CAULDRON_PATH/.git"
+    echo "Error: Cauldron installation is not a git repository"
+    echo "This may be an old installation format. Please reinstall using:"
+    echo "  curl -fsSL https://raw.githubusercontent.com/MagikIO/cauldron/main/install.sh | bash"
+    return 1
+  end
+
+  cd "$CAULDRON_PATH"
+
+  # Fetch latest changes
+  echo "→ Checking for updates on branch '$branch'..."
+  git fetch origin $branch 2>/dev/null
+
+  # Check if updates are available
+  set -l local_hash (git rev-parse HEAD)
+  set -l remote_hash (git rev-parse origin/$branch 2>/dev/null)
+
+  if test "$local_hash" = "$remote_hash"
+    echo "✓ Cauldron is already up to date!"
+    return 0
+  end
+
+  # Show what will change
+  echo ""
+  echo "Updates available:"
+  echo ""
+  git log --oneline --decorate --graph HEAD..origin/$branch | head -n 10
+
+  if set -q _flag_check_only
+    echo ""
+    echo "Run 'cauldron_update' to apply these updates"
+    return 0
+  end
+
+  echo ""
+  read -l -P "Apply updates? [y/N] " confirm
+
+  if test "$confirm" != "y" -a "$confirm" != "Y"
+    echo "Update cancelled"
+    return 0
+  end
+
+  # Create backup before updating (using migration system if available)
+  echo ""
+  echo "→ Creating backup..."
+
+  if functions -q __run_migrations
+    if not __run_migrations --backup-only
+      echo "Warning: Backup failed, but continuing..."
+    end
   else
-    echo "Failed to find the schema.sql file in the data folder, please file an issue on GitHub"
+    # Fallback: manual backup
+    set -l backup_dir "$CAULDRON_CONFIG_DIR/backups"
+    mkdir -p "$backup_dir"
+    set -l timestamp (date +%Y%m%d_%H%M%S)
+    if test -f "$CAULDRON_DATABASE"
+      cp "$CAULDRON_DATABASE" "$backup_dir/cauldron_$timestamp.db" 2>/dev/null
+    end
+  end
+
+  # Stash local changes
+  echo "→ Stashing local changes..."
+  git stash push -m "Cauldron auto-update stash (date +%Y%m%d_%H%M%S)" 2>/dev/null
+
+  # Pull updates
+  echo "→ Pulling latest changes..."
+  if not git pull origin $branch --rebase
+    echo "Error: Failed to pull updates"
+    echo "Your local changes have been stashed"
+    echo "Run 'cd $CAULDRON_PATH && git stash pop' to restore them"
     return 1
   end
 
-  # Now we need to make sure the DB is up to date
-  if test -f $CAULDRON_PATH/data/update.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql 2> /dev/null
+  echo "✓ Code updated successfully"
+
+  # ============================================================================
+  # PARALLEL INSTALLATION TASKS
+  # Run core updates (functions, data, migrations) and Node.js in parallel
+  # ============================================================================
+
+  # Show all pending installation tasks
+  echo ""
+  echo "📦 Installation Tasks:"
+  echo "  • Updating functions and data files"
+  echo "  • Running database migrations"
+  echo "  • Initializing personality system"
+  if test -f "$CAULDRON_PATH/package.json"
+    echo "  • Updating Node.js dependencies"
+  end
+  echo ""
+
+  # Create temp directory for parallel job status
+  set -l temp_dir (mktemp -d)
+  set -l functions_dir "$CAULDRON_CONFIG_DIR/functions"
+  mkdir -p "$functions_dir"
+
+  # Job 1: Core update chain (functions → data → migrations → personality)
+  # This must be sequential due to dependencies
+  set -l core_status "$temp_dir/core_status"
+  set -l core_log "$temp_dir/core_log"
+
+  fish -c "
+    set -l updated_count 0
+
+    # Copy all function directories
+    set -l function_dirs alias cli config effects functions familiar internal setup text UI update
+    for dir in \$function_dirs
+      if test -d '$CAULDRON_PATH'/\$dir
+        for func_file in '$CAULDRON_PATH'/\$dir/*.fish
+          if test -f \$func_file
+            cp -f \$func_file '$functions_dir/' 2>/dev/null
+            set updated_count (math \$updated_count + 1)
+          end
+        end
+      end
+    end
+
+    # Copy package functions
+    if test -d '$CAULDRON_PATH/packages/asdf'
+      for func_file in '$CAULDRON_PATH'/packages/asdf/*.fish
+        if test -f \$func_file
+          cp -f \$func_file '$functions_dir/' 2>/dev/null
+          set updated_count (math \$updated_count + 1)
+        end
+      end
+    end
+
+    if test -d '$CAULDRON_PATH/packages/nvm'
+      for func_file in '$CAULDRON_PATH'/packages/nvm/*.fish
+        if test -f \$func_file
+          cp -f \$func_file '$functions_dir/' 2>/dev/null
+          set updated_count (math \$updated_count + 1)
+        end
+      end
+    end
+
+    if test -f '$CAULDRON_PATH/packages/choose_packman.fish'
+      cp -f '$CAULDRON_PATH/packages/choose_packman.fish' '$functions_dir/' 2>/dev/null
+      set updated_count (math \$updated_count + 1)
+    end
+
+    echo \"functions:\$updated_count\" >> '$core_log'
+
+    # Copy data files
+    set -l data_dir '$CAULDRON_CONFIG_DIR/data'
+    mkdir -p \$data_dir
+    if test -f '$CAULDRON_PATH/data/palettes.json'
+      cp -f '$CAULDRON_PATH/data/palettes.json' \$data_dir/palettes.json 2>/dev/null
+    end
+    if test -f '$CAULDRON_PATH/data/spinners.json'
+      cp -f '$CAULDRON_PATH/data/spinners.json' \$data_dir/spinners.json 2>/dev/null
+    end
+    echo 'data:ok' >> '$core_log'
+
+    # Run migrations (if available)
+    if test -f '$functions_dir/__run_migrations.fish'
+      source '$functions_dir/__run_migrations.fish'
+      if __run_migrations 2>&1 | tail -n 20 >> '$core_log'
+        echo 'migrations:ok' >> '$core_log'
+      else
+        echo 'migrations:failed' >> '$core_log'
+      end
+    else
+      # Fallback to direct SQL execution if migrations not available
+      if test -f '$CAULDRON_PATH/data/schema.sql'
+        sqlite3 '$CAULDRON_DATABASE' < '$CAULDRON_PATH/data/schema.sql' 2>/dev/null
+      end
+      if test -f '$CAULDRON_PATH/data/update.sql'
+        sqlite3 '$CAULDRON_DATABASE' < '$CAULDRON_PATH/data/update.sql' 2>/dev/null
+      end
+      echo 'migrations:fallback' >> '$core_log'
+    end
+
+    # Initialize personality system
+    if test -f '$functions_dir/__init_personality_system.fish'
+      source '$functions_dir/__init_personality_system.fish'
+    end
+    if test -f '$functions_dir/__ensure_builtin_personalities.fish'
+      source '$functions_dir/__ensure_builtin_personalities.fish'
+    end
+    if functions -q __init_personality_system
+      __init_personality_system 2>/dev/null
+      echo 'personality:ok' >> '$core_log'
+    else
+      echo 'personality:skip' >> '$core_log'
+    end
+
+    echo 'done' > '$core_status'
+  " &
+  set -l core_pid $last_pid
+
+  # Job 2: Node.js dependencies (can run in parallel with core updates)
+  set -l node_status "$temp_dir/node_status"
+  set -l node_log "$temp_dir/node_log"
+  set -l has_nodejs 0
+
+  if test -f "$CAULDRON_PATH/package.json"
+    set has_nodejs 1
+    fish -c "
+      if command -q pnpm
+        cd '$CAULDRON_PATH' && pnpm install >> '$node_log' 2>&1
+        echo 'pnpm:ok' >> '$node_log'
+      else if command -q npm
+        cd '$CAULDRON_PATH' && npm install >> '$node_log' 2>&1
+        echo 'npm:ok' >> '$node_log'
+      else
+        echo 'none:skip' >> '$node_log'
+      end
+      echo 'done' > '$node_status'
+    " &
+    set -l node_pid $last_pid
   end
 
-  if set -qg CAULDRON_VERSION
-    set -eg CAULDRON_VERSION
-  end
+  # Wait for jobs to complete with status updates
+  set -l core_done 0
+  set -l node_done 0
 
-  if not set -q CAULDRON_VERSION
-    set -Ux CAULDRON_VERSION (sqlite3 $CAULDRON_DATABASE "SELECT version FROM cauldron") 2> /dev/null
+  echo "⏳ Installing in parallel..."
 
-    if test -z $CAULDRON_VERSION
-      set -gx CAULDRON_VERSION (git ls-remote --tags $CAULDRON_GIT_REPO | awk '{print $2}' | grep -o "v[0-9]*\.[0-9]*\.[0-9]*" | sort -V | tail -n 1 | sed 's/v//')
-      sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$CAULDRON_VERSION')"
+  while test $core_done -eq 0 -o \( $has_nodejs -eq 1 -a $node_done -eq 0 \)
+    # Check core job
+    if test $core_done -eq 0 -a -f "$core_status"
+      set core_done 1
+      echo "  ✓ Core updates completed"
+    end
+
+    # Check node job
+    if test $has_nodejs -eq 1 -a $node_done -eq 0 -a -f "$node_status"
+      set node_done 1
+      echo "  ✓ Node.js dependencies completed"
+    end
+
+    # Still waiting, show progress
+    if test $core_done -eq 0 -o \( $has_nodejs -eq 1 -a $node_done -eq 0 \)
+      sleep 0.5
     end
   end
 
-  # Now we check the most recent version (will be in format of "1.0.0")
-  set LATEST_VERSION (getLatestGithubReleaseTag MagikIO/cauldron | string replace -r '^v' '')
+  echo ""
+  echo "📋 Installation Summary:"
 
-  # We should exit if CAULDRON_VERSION or LATEST_VERSION is not set or a empty string
-  if test -z $CAULDRON_VERSION
-    if set -qg CAULDRON_FAMILIAR
-      set -eg CAULDRON_FAMILIAR
+  # Parse and display core results
+  if test -f "$core_log"
+    set -l func_count (grep '^functions:' "$core_log" | cut -d: -f2)
+    if test -n "$func_count"
+      echo "  ✓ Updated $func_count functions"
     end
-    set -Ux CAULDRON_FAMILIAR suse
-    familiar "Failed to pull which version of Cauldron you are on from the db :( "
-    return 1
-  end
 
-  if test -z $LATEST_VERSION
-    if set -qg CAULDRON_FAMILIAR
-      set -eg CAULDRON_FAMILIAR
+    if grep -q '^data:ok' "$core_log"
+      echo "  ✓ Data files updated"
     end
-    set -Ux CAULDRON_FAMILIAR suse
-    familiar "Failed to pull the latest version of Cauldron from GitHub :( "
-    return 1
-  end
 
-  # That will come out like "0.0.0" so we need to split it into an array, then compare each part
-  set SPLIT_LATEST_VERSION (string split . $LATEST_VERSION)
-  set SPLIT_CAULDRON_VERSION (string split . $CAULDRON_VERSION)
-
-  # Now we need to compare the two versions
-  if test $SPLIT_LATEST_VERSION[1] -gt $SPLIT_CAULDRON_VERSION[1] || test $SPLIT_LATEST_VERSION[2] -gt $SPLIT_CAULDRON_VERSION[2] || test $SPLIT_LATEST_VERSION[3] -gt $SPLIT_CAULDRON_VERSION[3]
-    if set -qg CAULDRON_FAMILIAR
-      set -eg CAULDRON_FAMILIAR
+    if grep -q '^migrations:ok' "$core_log"
+      echo "  ✓ Database migrations completed"
+    else if grep -q '^migrations:failed' "$core_log"
+      echo "  ⚠ Migrations failed - database backed up"
+      echo "    You may need to run 'cauldron_repair' to fix issues"
+    else if grep -q '^migrations:fallback' "$core_log"
+      echo "  ✓ Database updated (fallback mode)"
     end
-    set -Ux CAULDRON_FAMILIAR suse
-    # We need to update
-    familiar "Updating to version $LATEST_VERSION"
-  else
-    if set -qg CAULDRON_FAMILIAR
-      set -eg CAULDRON_FAMILIAR
+
+    if grep -q '^personality:ok' "$core_log"
+      echo "  ✓ Personality system initialized"
     end
-    set -Ux CAULDRON_FAMILIAR suse
-    # We are already up to date
-    familiar "You are already up to date!"
-    return 0;
   end
 
-  # First we need to create a temporary directory to back up your Cauldron data folder
-  set tmp_dir (mktemp -d)
-
-  # Next we need to backup their data folder from CONFIG directory (not install directory)
-  if test -d $CAULDRON_CONFIG_DIR/data
-    cp -r $CAULDRON_CONFIG_DIR/data/* $tmp_dir/
+  # Parse and display node results
+  if test $has_nodejs -eq 1 -a -f "$node_log"
+    if grep -q 'pnpm:ok' "$node_log"
+      echo "  ✓ Node dependencies updated (pnpm)"
+    else if grep -q 'npm:ok' "$node_log"
+      echo "  ✓ Node dependencies updated (npm)"
+    else if grep -q 'none:skip' "$node_log"
+      echo "  ⚠ No package manager found (skipped Node.js dependencies)"
+    end
   end
 
-  # Now we remove everything in the install folder so we can clone the latest
-  rm -rf $CAULDRON_PATH/
-  mkdir -p $CAULDRON_PATH
+  # Cleanup temp files
+  rm -rf "$temp_dir" 2>/dev/null
 
-  # Now we clone the latest version of the repo
-  git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
-
-  # Now we copy the user data folder back to CONFIG directory (not install directory)
-  if test -d $tmp_dir
-    # Ensure config data directory exists
-    mkdir -p $CAULDRON_CONFIG_DIR/data
-    # Copy the user data folder back to config directory
-    cp -r $tmp_dir/* $CAULDRON_CONFIG_DIR/data/
-  end
-
-  # Now we remove the temp folder
-  rm -rf $tmp_dir
-
-  # Re-run schema and update migrations with the newly cloned files
-  # This ensures any new schema changes or migrations are applied to the restored database
-  if test -f $CAULDRON_PATH/data/schema.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql 2> /dev/null
-  end
-
-  if test -f $CAULDRON_PATH/data/update.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql 2> /dev/null
-  end
-
-  # Add date column to dependencies table if it doesn't exist (for parallel installation tracking)
-  # Check if the column exists before trying to add it
-  set has_date_column (sqlite3 $CAULDRON_DATABASE "PRAGMA table_info(dependencies);" | grep -c "date")
-  if test $has_date_column -eq 0
-    sqlite3 $CAULDRON_DATABASE "ALTER TABLE dependencies ADD COLUMN date TEXT;" 2> /dev/null
-  end
-
-  # List of folders with functions
-  set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update"
-
-  # Update all functions we provide
-  for dir in $CAULDRON_LOCAL_DIRS
-    cpfunc $CAULDRON_PATH/$dir/ -d
-  end
-
-  cpfunc $CAULDRON_PATH/packages/asdf/ -d
-  cpfunc $CAULDRON_PATH/packages/nvm/ -d
-  cpfunc $CAULDRON_PATH/packages/choose_packman.fish
-
+  # Set git alias
   git config --global alias.visual-checkout '!fish $CAULDRON_PATH/update/visual_git_checkout.fish'
 
-  # CAULDRON_PALETTES and CAULDRON_SPINNERS are already set correctly in variable verification section above
+  # ============================================================================
+  # SYSTEM DEPENDENCIES
+  # Install required system packages (brew, pipx, tte, gum, etc.)
+  # ============================================================================
 
   set OS (uname -s)
 
@@ -491,19 +670,20 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       rm -rf "$temp_dir" 2>/dev/null
   end
 
-  # Now we need to update the DB's version
-  sqlite3 $CAULDRON_DATABASE "INSERT OR REPLACE INTO cauldron (version) VALUES ('$LATEST_VERSION')"
-
-  # Use simple banner if styled-banner fails (tte might not be ready yet)
-  if command -q tte
-    styled-banner "Updated!"
-  else
-    banner "Updated!"
-  end
+  # ============================================================================
+  # COMPLETION
+  # Show what changed and prompt user to restart shell
+  # ============================================================================
 
   echo ""
-  echo "Cauldron has been updated to version $LATEST_VERSION"
-  echo "Restart your shell to use the updated version: exec fish"
+  echo "✨ Cauldron updated successfully!"
+  echo ""
+  echo "Changes applied:"
+  git -C "$CAULDRON_PATH" log --oneline --decorate $local_hash..$remote_hash
+
+  echo ""
+  echo "Please restart your Fish shell to use the updated version:"
+  echo "  exec fish"
 
   return 0
 end
