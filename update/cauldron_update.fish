@@ -503,7 +503,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
           end
 
           if test (count \$missing_deps) -gt 0
-            sudo apt install -y \$missing_deps >> '$apt_log' 2>&1
+            sudo apt install -y \$missing_deps >> '$apt_log' 2>&1 < /dev/null
           end
 
           # Collect dependency info to write to DB later (avoid concurrent DB writes)
@@ -517,7 +517,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
             end
           end
           echo 'done' > '$apt_status'
-        " &
+        " < /dev/null &
         set apt_pid $last_pid
       else
         echo 'done' > $apt_status
@@ -538,7 +538,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
           end
 
           if test (count \$missing_deps) -gt 0
-            brew install \$missing_deps >> '$brew_log' 2>&1
+            brew install \$missing_deps >> '$brew_log' 2>&1 < /dev/null
           end
 
           # Collect dependency info to write to DB later (avoid concurrent DB writes)
@@ -552,7 +552,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
             end
           end
           echo 'done' > '$brew_status'
-        " &
+        " < /dev/null &
         set brew_pid $last_pid
       else
         echo 'done' > $brew_status
@@ -563,7 +563,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
         fish -c "
           for dep in $snap_dependencies
             if not type -q \$dep
-              sudo snap install \$dep >> '$snap_log' 2>&1
+              sudo snap install \$dep >> '$snap_log' 2>&1 < /dev/null
             end
 
             if type -q \$dep
@@ -575,7 +575,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
             end
           end
           echo 'done' > '$snap_status'
-        " &
+        " < /dev/null &
         set snap_pid $last_pid
       else
         echo 'done' > $snap_status
