@@ -230,43 +230,73 @@ copy_data_files() {
 install_functions() {
     step "Installing Fish functions..."
 
+    info "Installing from: $CAULDRON_INSTALL_DIR"
+    info "Installing to: $CAULDRON_CONFIG_DIR/functions"
+
     # Copy all function files from all directories
     local function_count=0
     local function_dirs=("alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update")
 
     for dir in "${function_dirs[@]}"; do
+        info "Checking directory: $dir"
         if [ -d "$CAULDRON_INSTALL_DIR/$dir" ]; then
+            local dir_count=0
             for func_file in "$CAULDRON_INSTALL_DIR/$dir"/*.fish; do
-                if [ -f "$func_file" ]; then
-                    cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
+                # Skip if no files match (glob didn't expand)
+                [ -f "$func_file" ] || continue
+
+                if cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
                     ((function_count++))
+                    ((dir_count++))
+                else
+                    warn "Failed to copy $func_file"
                 fi
             done
+            if [ $dir_count -gt 0 ]; then
+                info "  Copied $dir_count functions from $dir"
+            fi
+        else
+            info "  Directory $dir not found, skipping"
         fi
     done
 
     # Also copy package-specific functions
+    info "Checking packages..."
     if [ -d "$CAULDRON_INSTALL_DIR/packages/asdf" ]; then
+        local pkg_count=0
         for func_file in "$CAULDRON_INSTALL_DIR/packages/asdf"/*.fish; do
-            if [ -f "$func_file" ]; then
-                cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
+            [ -f "$func_file" ] || continue
+            if cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
                 ((function_count++))
+                ((pkg_count++))
             fi
         done
+        info "  Copied $pkg_count functions from packages/asdf"
     fi
 
     if [ -d "$CAULDRON_INSTALL_DIR/packages/nvm" ]; then
+        local pkg_count=0
         for func_file in "$CAULDRON_INSTALL_DIR/packages/nvm"/*.fish; do
-            if [ -f "$func_file" ]; then
-                cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
+            [ -f "$func_file" ] || continue
+            if cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
                 ((function_count++))
+                ((pkg_count++))
             fi
         done
+        info "  Copied $pkg_count functions from packages/nvm"
     fi
 
     if [ -f "$CAULDRON_INSTALL_DIR/packages/choose_packman.fish" ]; then
-        cp -f "$CAULDRON_INSTALL_DIR/packages/choose_packman.fish" "$CAULDRON_CONFIG_DIR/functions/"
-        ((function_count++))
+        if cp -f "$CAULDRON_INSTALL_DIR/packages/choose_packman.fish" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
+            ((function_count++))
+            info "  Copied choose_packman.fish"
+        fi
+    fi
+
+    if [ $function_count -eq 0 ]; then
+        error "No functions were copied!"
+        error "Check that $CAULDRON_INSTALL_DIR contains function directories"
+        return 1
     fi
 
     success "Installed $function_count functions"
