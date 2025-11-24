@@ -32,10 +32,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     set -eg CAULDRON_PATH
   end
 
-  # CAULDRON_PATH should point to the install directory (git repo)
-  # Default to $HOME/.cauldron to align with install.sh
   if not set -q CAULDRON_PATH
-    set -Ux CAULDRON_PATH $HOME/.cauldron
+    set -Ux CAULDRON_PATH $HOME/.config/cauldron
   end
 
   # Make sure the path exists
@@ -44,27 +42,24 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     return 1
   end
 
-  # Config directory for user data (separate from install directory)
-  set CAULDRON_CONFIG_DIR $HOME/.config/cauldron
-
   # Make sure all vars are set
   if not set -q __CAULDRON_DOCUMENTATION_PATH
     set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
-  
+
     if not test -d $__CAULDRON_DOCUMENTATION_PATH
       mkdir -p $__CAULDRON_DOCUMENTATION_PATH
     end
   end
-  
+
   if not set -q CAULDRON_GIT_REPO
     set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
   end
-  
+
   if not set -q CAULDRON_DATABASE
-    set -Ux CAULDRON_DATABASE $CAULDRON_CONFIG_DIR/data/cauldron.db
+    set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
 
     if not test -f $CAULDRON_DATABASE
-      mkdir -p $CAULDRON_CONFIG_DIR/data
+      mkdir -p $CAULDRON_PATH/data
       touch $CAULDRON_DATABASE
     end
   end
@@ -146,11 +141,19 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     return 0;
   end
 
-  # User data (databases) are in the config directory, not the install directory
-  # Repository data (schema.sql, etc.) are in the install directory
-  # So we don't need to backup anything - user data stays in config dir!
+  # First we need to create a temporary directory to back up user data (databases only)
+  set tmp_dir (mktemp -d)
 
-  # Now we update the install directory by removing and re-cloning
+  # Backup ONLY database files (user data), not repository files like schema.sql
+  if test -d $CAULDRON_PATH/data
+    for db_file in $CAULDRON_PATH/data/*.db
+      if test -f $db_file
+        cp -f $db_file $tmp_dir/
+      end
+    end
+  end
+
+  # Now we remove everything in the base folder so we can clone the latest
   rm -rf $CAULDRON_PATH/
   mkdir -p $CAULDRON_PATH
 
@@ -166,6 +169,18 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     familiar "Failed to clone repository correctly - schema.sql is missing! Please check your internet connection and try again."
     return 1
   end
+
+  # Restore ONLY the database files, preserving fresh repository files
+  if test -d $tmp_dir
+    for db_file in $tmp_dir/*.db
+      if test -f $db_file
+        cp -f $db_file $CAULDRON_PATH/data/
+      end
+    end
+  end
+
+  # Clean up temp folder
+  rm -rf $tmp_dir
 
   # Re-run schema and update migrations with the newly cloned files
   # This ensures any new schema changes or migrations are applied to the restored database
