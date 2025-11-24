@@ -260,8 +260,8 @@ install_functions() {
                 [ -f "$func_file" ] || continue
 
                 if cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
-                    ((function_count++))
-                    ((dir_count++))
+                    function_count=$((function_count + 1))
+                    dir_count=$((dir_count + 1))
                 else
                     warn "Failed to copy $func_file"
                 fi
@@ -281,8 +281,8 @@ install_functions() {
         for func_file in "$CAULDRON_INSTALL_DIR/packages/asdf"/*.fish; do
             [ -f "$func_file" ] || continue
             if cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
-                ((function_count++))
-                ((pkg_count++))
+                function_count=$((function_count + 1))
+                pkg_count=$((pkg_count + 1))
             fi
         done
         info "  Copied $pkg_count functions from packages/asdf"
@@ -293,8 +293,8 @@ install_functions() {
         for func_file in "$CAULDRON_INSTALL_DIR/packages/nvm"/*.fish; do
             [ -f "$func_file" ] || continue
             if cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
-                ((function_count++))
-                ((pkg_count++))
+                function_count=$((function_count + 1))
+                pkg_count=$((pkg_count + 1))
             fi
         done
         info "  Copied $pkg_count functions from packages/nvm"
@@ -302,7 +302,7 @@ install_functions() {
 
     if [ -f "$CAULDRON_INSTALL_DIR/packages/choose_packman.fish" ]; then
         if cp -f "$CAULDRON_INSTALL_DIR/packages/choose_packman.fish" "$CAULDRON_CONFIG_DIR/functions/" 2>/dev/null; then
-            ((function_count++))
+            function_count=$((function_count + 1))
             info "  Copied choose_packman.fish"
         fi
     fi
