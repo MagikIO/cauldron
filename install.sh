@@ -230,24 +230,43 @@ copy_data_files() {
 install_functions() {
     step "Installing Fish functions..."
 
-    # Copy all function files
+    # Copy all function files from all directories
     local function_count=0
+    local function_dirs=("alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update")
 
-    for func_file in "$CAULDRON_INSTALL_DIR"/functions/*.fish; do
-        if [ -f "$func_file" ]; then
-            cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
-            ((function_count++))
+    for dir in "${function_dirs[@]}"; do
+        if [ -d "$CAULDRON_INSTALL_DIR/$dir" ]; then
+            for func_file in "$CAULDRON_INSTALL_DIR/$dir"/*.fish; do
+                if [ -f "$func_file" ]; then
+                    cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
+                    ((function_count++))
+                fi
+            done
         fi
     done
 
-    # Copy familiar directory functions if they exist
-    if [ -d "$CAULDRON_INSTALL_DIR/familiar" ]; then
-        for func_file in "$CAULDRON_INSTALL_DIR"/familiar/*.fish; do
+    # Also copy package-specific functions
+    if [ -d "$CAULDRON_INSTALL_DIR/packages/asdf" ]; then
+        for func_file in "$CAULDRON_INSTALL_DIR/packages/asdf"/*.fish; do
             if [ -f "$func_file" ]; then
                 cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
                 ((function_count++))
             fi
         done
+    fi
+
+    if [ -d "$CAULDRON_INSTALL_DIR/packages/nvm" ]; then
+        for func_file in "$CAULDRON_INSTALL_DIR/packages/nvm"/*.fish; do
+            if [ -f "$func_file" ]; then
+                cp -f "$func_file" "$CAULDRON_CONFIG_DIR/functions/"
+                ((function_count++))
+            fi
+        done
+    fi
+
+    if [ -f "$CAULDRON_INSTALL_DIR/packages/choose_packman.fish" ]; then
+        cp -f "$CAULDRON_INSTALL_DIR/packages/choose_packman.fish" "$CAULDRON_CONFIG_DIR/functions/"
+        ((function_count++))
     fi
 
     success "Installed $function_count functions"
