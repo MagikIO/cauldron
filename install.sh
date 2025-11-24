@@ -281,8 +281,18 @@ setup_fish_config() {
     # Create fish config directory if it doesn't exist
     mkdir -p "$(dirname "$fish_config")"
 
+    # Create config file if it doesn't exist
+    if [ ! -f "$fish_config" ]; then
+        info "Creating new Fish config file..."
+        touch "$fish_config"
+    fi
+
+    info "Fish config file: $fish_config"
+    info "Install dir: $CAULDRON_INSTALL_DIR"
+    info "Config dir: $CAULDRON_CONFIG_DIR"
+
     # Check if Cauldron is already sourced
-    if [ -f "$fish_config" ] && grep -q "CAULDRON_PATH" "$fish_config" 2>/dev/null; then
+    if grep -q "CAULDRON_PATH" "$fish_config" 2>/dev/null; then
         info "Cauldron already configured, updating paths..."
 
         # Update the CAULDRON_PATH if it's wrong (pointing to config instead of install dir)
@@ -321,7 +331,28 @@ if type -q __init_personality_system
 end
 EOF
 
-        success "Fish configuration updated"
+        # Verify the write was successful
+        if grep -q "CAULDRON_PATH" "$fish_config" 2>/dev/null; then
+            success "Fish configuration updated successfully"
+        else
+            error "Failed to update Fish configuration"
+            error "Please manually add the configuration to $fish_config"
+            return 1
+        fi
+    fi
+
+    # Final verification
+    info "Verifying Fish configuration..."
+    if grep -q "set -gx CAULDRON_PATH \"$CAULDRON_INSTALL_DIR\"" "$fish_config"; then
+        success "✓ CAULDRON_PATH is set correctly"
+    else
+        warn "⚠ CAULDRON_PATH may not be set correctly"
+    fi
+
+    if grep -q "fish_function_path \"$CAULDRON_CONFIG_DIR/functions\"" "$fish_config"; then
+        success "✓ Cauldron functions directory is in function path"
+    else
+        warn "⚠ Cauldron functions directory may not be in function path"
     fi
 }
 
@@ -491,6 +522,28 @@ print_success() {
     echo ""
 }
 
+# Unset all Cauldron variables to ensure clean installation
+unset_cauldron_variables() {
+    step "Unsetting any existing Cauldron variables..."
+
+    # Use fish to unset universal variables if fish is available
+    if command_exists fish; then
+        fish -c "
+            set -e CAULDRON_PATH 2>/dev/null
+            set -e CAULDRON_DATABASE 2>/dev/null
+            set -e CAULDRON_PALETTES 2>/dev/null
+            set -e CAULDRON_SPINNERS 2>/dev/null
+            set -e CAULDRON_INTERNAL_TOOLS 2>/dev/null
+            set -e CAULDRON_VERSION 2>/dev/null
+            set -e CAULDRON_GIT_REPO 2>/dev/null
+            set -e CAULDRON_FAMILIAR 2>/dev/null
+            set -e __CAULDRON_DOCUMENTATION_PATH 2>/dev/null
+        " 2>/dev/null || true
+    fi
+
+    success "Cauldron variables cleared"
+}
+
 # Main installation flow
 main() {
     echo ""
@@ -502,6 +555,7 @@ main() {
     echo ""
 
     check_prerequisites
+    unset_cauldron_variables # Clear any existing variables first
     setup_repository
     create_directories
     initialize_database
