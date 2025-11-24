@@ -1,6 +1,12 @@
 #!/usr/bin/env fish
 
 function __cauldron_help
+    # Check if we're running in an interactive terminal first
+    if not isatty stdin; or not isatty stdout
+        echo "Error: cauldron --help requires an interactive terminal" >&2
+        return 1
+    end
+
     set -l options c/category
     argparse -n cauldron_help $options -- $argv
 
@@ -209,8 +215,16 @@ function __cauldron_help
     set __lower_case_category (to_lower_case $__doc_category)
     set -gx __CAULDRON_DOC_CATEGORY_PATH "$__CAULDRON_DOCUMENTATION_PATH/$__lower_case_category"
 
+    # Check if documentation directory exists
+    if not test -d "$__CAULDRON_DOC_CATEGORY_PATH"
+        echo "Error: Documentation directory not found: $__CAULDRON_DOC_CATEGORY_PATH" >&2
+        echo "Please ensure Cauldron is properly installed." >&2
+        return 1
+    end
+
     # terminal width
-    set term_width (tput cols)
+    set term_width (tput cols 2>/dev/null)
+    or set term_width 80  # Default width if tput fails
     # Reduce to 80% of the terminal width
     set term_width (math (math --scale 0 $term_width \* 0.8))
 
