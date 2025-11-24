@@ -526,6 +526,10 @@ function cauldron_update -d 'Update Cauldron to the latest version'
       # Job 2: Install all Brew dependencies in parallel
       if test (count $brew_dependencies) -gt 0
         fish -c "
+          # Make Homebrew non-interactive for background execution
+          set -x HOMEBREW_NO_AUTO_UPDATE 1
+          set -x HOMEBREW_NO_INSTALL_CLEANUP 1
+
           set -l missing_deps
           for dep in $brew_dependencies
             if not type -q \$dep
