@@ -12,7 +12,7 @@ function cauldron
   set script_dir (dirname (status --current-filename))
     
   # Define options that can be passed
-  set -l options "v/version" "h/help" "D/new-docs=" "z/cauldron" "u/update"
+  set -l options "v/version" "h/help" "D/new-docs=" "z/cauldron" "u/update" "t/tmux="
   argparse -n cauldron $options -- $argv
 
   # If the user passes the -v or --version flag, print the version number
@@ -42,6 +42,28 @@ function cauldron
   # If the user passes the -u or --update flag, run __cauldron_update
   if set -q _flag_u; or set -q _flag_update
     cauldron_update
+    exit 0
+  end
+
+  # If the user passes the -t or --tmux flag, run cauldron_tmux
+  if set -q _flag_t; or set -q _flag_tmux
+    switch $_flag_t
+      case "install"
+        cauldron_tmux --install
+      case "modify"
+        cauldron_tmux --modify
+      case "remove"
+        cauldron_tmux --remove
+      case "backup"
+        cauldron_tmux --backup
+      case "restore"
+        cauldron_tmux --restore
+      case "list"
+        cauldron_tmux --list-backups
+      case '*'
+        # If no specific action or invalid action, show interactive menu
+        cauldron_tmux
+    end
     exit 0
   end
 
