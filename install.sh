@@ -341,6 +341,15 @@ setup_fish_config() {
 
         # Update the CAULDRON_PATH if it's wrong (pointing to config instead of install dir)
         sed -i.bak "s|set -gx CAULDRON_PATH.*|set -gx CAULDRON_PATH \"$CAULDRON_INSTALL_DIR\"|g" "$fish_config"
+
+        # Add CAULDRON_CONFIG_DIR if it doesn't exist (for existing users upgrading)
+        if ! grep -q "CAULDRON_CONFIG_DIR" "$fish_config" 2>/dev/null; then
+            sed -i.bak "/set -gx CAULDRON_PATH/a\\
+set -gx CAULDRON_CONFIG_DIR \"$CAULDRON_CONFIG_DIR\"" "$fish_config"
+        else
+            sed -i.bak "s|set -gx CAULDRON_CONFIG_DIR.*|set -gx CAULDRON_CONFIG_DIR \"$CAULDRON_CONFIG_DIR\"|g" "$fish_config"
+        fi
+
         sed -i.bak "s|set -gx CAULDRON_DATABASE.*|set -gx CAULDRON_DATABASE \"$CAULDRON_CONFIG_DIR/data/cauldron.db\"|g" "$fish_config"
         sed -i.bak "s|set -gx CAULDRON_PALETTES.*|set -gx CAULDRON_PALETTES \"$CAULDRON_CONFIG_DIR/data/palettes.json\"|g" "$fish_config"
         sed -i.bak "s|set -gx CAULDRON_SPINNERS.*|set -gx CAULDRON_SPINNERS \"$CAULDRON_CONFIG_DIR/data/spinners.json\"|g" "$fish_config"
@@ -354,6 +363,7 @@ setup_fish_config() {
 
 # Cauldron - Magik for your terminal
 set -gx CAULDRON_PATH "$CAULDRON_INSTALL_DIR"
+set -gx CAULDRON_CONFIG_DIR "$CAULDRON_CONFIG_DIR"
 set -gx CAULDRON_DATABASE "$CAULDRON_CONFIG_DIR/data/cauldron.db"
 set -gx CAULDRON_PALETTES "$CAULDRON_CONFIG_DIR/data/palettes.json"
 set -gx CAULDRON_SPINNERS "$CAULDRON_CONFIG_DIR/data/spinners.json"

@@ -27,49 +27,108 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Get sudo so we can update
   sudo -v
 
-  # If the path is only global, we want to unset it, so we can set it universally
+  # ============================================================================
+  # VARIABLE VERIFICATION AND CORRECTION
+  # Ensure all Cauldron paths are set correctly to prevent confusion between
+  # install directory (~/.cauldron) and config directory (~/.config/cauldron)
+  # ============================================================================
+
+  # Set install directory (where git repo lives)
   if set -qg CAULDRON_PATH
     set -eg CAULDRON_PATH
   end
 
   if not set -q CAULDRON_PATH
     set -Ux CAULDRON_PATH $HOME/.cauldron
+  else if test "$CAULDRON_PATH" != "$HOME/.cauldron"
+    # Fix incorrect CAULDRON_PATH
+    set -Ux CAULDRON_PATH $HOME/.cauldron
   end
 
-  # Make sure the path exists
+  # Make sure the install path exists
   if not test -d $CAULDRON_PATH
-    echo " You must have Cauldron installed to update it, please run the install script instead"
+    echo "Error: Cauldron installation directory not found at $CAULDRON_PATH"
+    echo "You must have Cauldron installed to update it, please run the install script instead"
     return 1
   end
 
-  # Make sure all vars are set
+  # Set config directory (where user data lives)
+  if set -qg CAULDRON_CONFIG_DIR
+    set -eg CAULDRON_CONFIG_DIR
+  end
+
+  if not set -q CAULDRON_CONFIG_DIR
+    set -Ux CAULDRON_CONFIG_DIR $HOME/.config/cauldron
+  else if test "$CAULDRON_CONFIG_DIR" != "$HOME/.config/cauldron"
+    # Fix incorrect CAULDRON_CONFIG_DIR
+    set -Ux CAULDRON_CONFIG_DIR $HOME/.config/cauldron
+  end
+
+  # Create config directory if it doesn't exist
+  if not test -d $CAULDRON_CONFIG_DIR
+    mkdir -p $CAULDRON_CONFIG_DIR
+  end
+
+  # Verify other required variables
   if not set -q __CAULDRON_DOCUMENTATION_PATH
     set -Ux __CAULDRON_DOCUMENTATION_PATH $CAULDRON_PATH/docs
-  
-    if not test -d $__CAULDRON_DOCUMENTATION_PATH
-      mkdir -p $__CAULDRON_DOCUMENTATION_PATH
-    end
   end
-  
+
+  if not test -d $__CAULDRON_DOCUMENTATION_PATH
+    mkdir -p $__CAULDRON_DOCUMENTATION_PATH
+  end
+
   if not set -q CAULDRON_GIT_REPO
     set -Ux CAULDRON_GIT_REPO "https://github.com/MagikIO/cauldron.git"
   end
-  
-  if not set -q CAULDRON_DATABASE
-    set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
-  
-    if not test -f $CAULDRON_DATABASE
-      mkdir -p $CAULDRON_PATH/data
-      touch $CAULDRON_DATABASE
-    end
+
+  # Database should be in config directory, NOT install directory
+  if set -qg CAULDRON_DATABASE
+    set -eg CAULDRON_DATABASE
   end
-  
+
+  if not set -q CAULDRON_DATABASE
+    set -Ux CAULDRON_DATABASE $CAULDRON_CONFIG_DIR/data/cauldron.db
+  else if test "$CAULDRON_DATABASE" != "$CAULDRON_CONFIG_DIR/data/cauldron.db"
+    # Fix incorrect database path
+    set -Ux CAULDRON_DATABASE $CAULDRON_CONFIG_DIR/data/cauldron.db
+  end
+
+  if not test -f $CAULDRON_DATABASE
+    mkdir -p $CAULDRON_CONFIG_DIR/data
+    touch $CAULDRON_DATABASE
+  end
+
+  # Data files should be in config directory
+  if set -qg CAULDRON_PALETTES
+    set -eg CAULDRON_PALETTES
+  end
+
+  if not set -q CAULDRON_PALETTES
+    set -Ux CAULDRON_PALETTES $CAULDRON_CONFIG_DIR/data/palettes.json
+  else if test "$CAULDRON_PALETTES" != "$CAULDRON_CONFIG_DIR/data/palettes.json"
+    set -Ux CAULDRON_PALETTES $CAULDRON_CONFIG_DIR/data/palettes.json
+  end
+
+  if set -qg CAULDRON_SPINNERS
+    set -eg CAULDRON_SPINNERS
+  end
+
+  if not set -q CAULDRON_SPINNERS
+    set -Ux CAULDRON_SPINNERS $CAULDRON_CONFIG_DIR/data/spinners.json
+  else if test "$CAULDRON_SPINNERS" != "$CAULDRON_CONFIG_DIR/data/spinners.json"
+    set -Ux CAULDRON_SPINNERS $CAULDRON_CONFIG_DIR/data/spinners.json
+  end
+
+  # Internal tools are in install directory
   if not set -q CAULDRON_INTERNAL_TOOLS
     set -Ux CAULDRON_INTERNAL_TOOLS $CAULDRON_PATH/tools
-  
-    if not test -d $CAULDRON_INTERNAL_TOOLS
-      mkdir -p $CAULDRON_INTERNAL_TOOLS
-    end
+  else if test "$CAULDRON_INTERNAL_TOOLS" != "$CAULDRON_PATH/tools"
+    set -Ux CAULDRON_INTERNAL_TOOLS $CAULDRON_PATH/tools
+  end
+
+  if not test -d $CAULDRON_INTERNAL_TOOLS
+    mkdir -p $CAULDRON_INTERNAL_TOOLS
   end
 
   if test -f $CAULDRON_PATH/data/schema.sql
@@ -144,22 +203,24 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # First we need to create a temporary directory to back up your Cauldron data folder
   set tmp_dir (mktemp -d)
 
-  # Next we need to backup their data folder by copying it to a temp folder
-  if test -d $CAULDRON_PATH/data
-    cp -r $CAULDRON_PATH/data/* $tmp_dir/
+  # Next we need to backup their data folder from CONFIG directory (not install directory)
+  if test -d $CAULDRON_CONFIG_DIR/data
+    cp -r $CAULDRON_CONFIG_DIR/data/* $tmp_dir/
   end
 
-  # Now we remove everything in the base folder so we can clone the latest
+  # Now we remove everything in the install folder so we can clone the latest
   rm -rf $CAULDRON_PATH/
   mkdir -p $CAULDRON_PATH
 
   # Now we clone the latest version of the repo
   git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
 
-  # Now we copy the data folder back
+  # Now we copy the user data folder back to CONFIG directory (not install directory)
   if test -d $tmp_dir
-    # Copy the data folder back
-    cp -r $tmp_dir/* $CAULDRON_PATH/data/
+    # Ensure config data directory exists
+    mkdir -p $CAULDRON_CONFIG_DIR/data
+    # Copy the user data folder back to config directory
+    cp -r $tmp_dir/* $CAULDRON_CONFIG_DIR/data/
   end
 
   # Now we remove the temp folder
@@ -196,9 +257,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   git config --global alias.visual-checkout '!fish $CAULDRON_PATH/update/visual_git_checkout.fish'
 
-  # We need to make sure these variables are set
-  set -Ux CAULDRON_PALETTES $CAULDRON_PATH/data/palettes.json
-  set -Ux CAULDRON_SPINNERS $CAULDRON_PATH/data/spinners.json
+  # CAULDRON_PALETTES and CAULDRON_SPINNERS are already set correctly in variable verification section above
 
   set OS (uname -s)
 
