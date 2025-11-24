@@ -27,18 +27,30 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Get sudo so we can update
   sudo -v
 
+  # Define the two critical paths used by Cauldron
+  # CAULDRON_PATH: Source repository (~/.cauldron)
+  # CAULDRON_CONFIG_DIR: Runtime/config directory (~/.config/cauldron)
+
   # If the path is only global, we want to unset it, so we can set it universally
   if set -qg CAULDRON_PATH
     set -eg CAULDRON_PATH
   end
 
   if not set -q CAULDRON_PATH
-    set -Ux CAULDRON_PATH $HOME/.config/cauldron
+    set -Ux CAULDRON_PATH $HOME/.cauldron
   end
 
-  # Make sure the path exists
+  # Set the config directory (XDG-compliant)
+  set -l CAULDRON_CONFIG_DIR $HOME/.config/cauldron
+
+  # Make sure both paths exist
   if not test -d $CAULDRON_PATH
-    echo " You must have Cauldron installed to update it, please run the install script instead"
+    echo " Source repository not found at $CAULDRON_PATH - please run the install script"
+    return 1
+  end
+
+  if not test -d $CAULDRON_CONFIG_DIR
+    echo " Config directory not found at $CAULDRON_CONFIG_DIR - please run the install script"
     return 1
   end
 
@@ -56,17 +68,17 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   end
 
   if not set -q CAULDRON_DATABASE
-    set -Ux CAULDRON_DATABASE $CAULDRON_PATH/data/cauldron.db
+    set -Ux CAULDRON_DATABASE $CAULDRON_CONFIG_DIR/data/cauldron.db
 
     if not test -f $CAULDRON_DATABASE
-      mkdir -p $CAULDRON_PATH/data
+      mkdir -p $CAULDRON_CONFIG_DIR/data
       touch $CAULDRON_DATABASE
     end
   end
-  
+
   if not set -q CAULDRON_INTERNAL_TOOLS
     set -Ux CAULDRON_INTERNAL_TOOLS $CAULDRON_PATH/tools
-  
+
     if not test -d $CAULDRON_INTERNAL_TOOLS
       mkdir -p $CAULDRON_INTERNAL_TOOLS
     end
@@ -141,76 +153,80 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     return 0;
   end
 
-  # First we need to create a temporary directory to back up user data (databases only)
-  set tmp_dir (mktemp -d)
+  # Create a backup of the database before updating
+  set backup_dir $CAULDRON_CONFIG_DIR/backups
+  mkdir -p $backup_dir
 
-  # Backup ONLY database files (user data), not repository files like schema.sql
-  if test -d $CAULDRON_PATH/data
-    for db_file in $CAULDRON_PATH/data/*.db
-      if test -f $db_file
-        cp -f $db_file $tmp_dir/
-      end
-    end
+  set backup_file $backup_dir/cauldron_backup_(date +%Y%m%d_%H%M%S).db
+  if test -f $CAULDRON_DATABASE
+    cp -f $CAULDRON_DATABASE $backup_file
+    echo "Database backed up to: $backup_file"
   end
 
-  # Now we remove everything in the base folder so we can clone the latest
-  rm -rf $CAULDRON_PATH/
-  mkdir -p $CAULDRON_PATH
+  # Update the source repository using git pull (NOT delete/clone!)
+  echo "Updating source repository at $CAULDRON_PATH..."
+  cd $CAULDRON_PATH
 
-  # Now we clone the latest version of the repo
-  git clone $CAULDRON_GIT_REPO $CAULDRON_PATH
+  # Stash any local changes
+  git stash push -m "Cauldron auto-update stash $(date +%Y%m%d_%H%M%S)" >/dev/null 2>&1 || true
 
-  # Verify that critical repository files exist after cloning
+  # Pull latest changes
+  if not git pull origin main --rebase
+    if set -qg CAULDRON_FAMILIAR
+      set -eg CAULDRON_FAMILIAR
+    end
+    set -Ux CAULDRON_FAMILIAR suse
+    familiar "Failed to update repository. Please check your internet connection and try again."
+    return 1
+  end
+
+  # Verify that critical repository files exist after update
   if not test -f $CAULDRON_PATH/data/schema.sql
     if set -qg CAULDRON_FAMILIAR
       set -eg CAULDRON_FAMILIAR
     end
     set -Ux CAULDRON_FAMILIAR suse
-    familiar "Failed to clone repository correctly - schema.sql is missing! Please check your internet connection and try again."
-    return 1
-  end
+    familiar "Repository update incomplete - schema.sql is missing! Attempting to restore..."
+    git checkout main -- data/schema.sql 2>/dev/null || true
 
-  # Restore ONLY the database files, preserving fresh repository files
-  if test -d $tmp_dir
-    for db_file in $tmp_dir/*.db
-      if test -f $db_file
-        cp -f $db_file $CAULDRON_PATH/data/
-      end
+    if not test -f $CAULDRON_PATH/data/schema.sql
+      familiar "Unable to restore schema.sql. Please run cauldron_repair."
+      return 1
     end
   end
 
-  # Clean up temp folder
-  rm -rf $tmp_dir
+  echo "Source repository updated successfully"
 
-  # Re-run schema and update migrations with the newly cloned files
-  # This ensures any new schema changes or migrations are applied to the restored database
+  # Run database migrations with the updated files
+  # This ensures any new schema changes or migrations are applied to the database
+  echo "Running database migrations..."
+
   if test -f $CAULDRON_PATH/data/schema.sql
     sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/schema.sql 2> /dev/null
   end
 
-  if test -f $CAULDRON_PATH/data/update.sql
-    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/update.sql 2> /dev/null
+  if test -f $CAULDRON_PATH/data/memory_schema.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/memory_schema.sql 2> /dev/null
   end
 
-  # Add date column to dependencies table if it doesn't exist (for parallel installation tracking)
-  # Check if the column exists before trying to add it
-  set has_date_column (sqlite3 $CAULDRON_DATABASE "PRAGMA table_info(dependencies);" | grep -c "date")
-  if test $has_date_column -eq 0
-    sqlite3 $CAULDRON_DATABASE "ALTER TABLE dependencies ADD COLUMN date TEXT;" 2> /dev/null
+  if test -f $CAULDRON_PATH/data/proactive_schema.sql
+    sqlite3 $CAULDRON_DATABASE < $CAULDRON_PATH/data/proactive_schema.sql 2> /dev/null
   end
 
-  # List of folders with functions
-  set CAULDRON_LOCAL_DIRS "alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update"
-
-  # Update all functions we provide
-  for dir in $CAULDRON_LOCAL_DIRS
-    cpfunc $CAULDRON_PATH/$dir/ -d
+  # Run migrations from migrations directory
+  if type -q __run_migrations
+    __run_migrations
+  else if test -f $CAULDRON_CONFIG_DIR/functions/__run_migrations.fish
+    source $CAULDRON_CONFIG_DIR/functions/__run_migrations.fish
+    __run_migrations
   end
 
-  cpfunc $CAULDRON_PATH/packages/asdf/ -d
-  cpfunc $CAULDRON_PATH/packages/nvm/ -d
-  cpfunc $CAULDRON_PATH/packages/choose_packman.fish
+  echo "Migrations completed"
 
+  # NOTE: Functions are symlinked from source to config, so git pull automatically updates them!
+  # No need to copy functions - the symlinks at ~/.config/cauldron/* point to ~/.cauldron/*
+
+  # Configure git alias for visual checkout
   git config --global alias.visual-checkout '!fish $CAULDRON_PATH/update/visual_git_checkout.fish'
 
   # Copy data files from install dir to config dir
