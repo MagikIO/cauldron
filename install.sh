@@ -249,7 +249,7 @@ install_functions() {
 
     # Copy all function files from all directories
     local function_count=0
-    local function_dirs=("alias" "cli" "config" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update")
+    local function_dirs=("alias" "cli" "config" "docs" "effects" "functions" "familiar" "internal" "setup" "text" "UI" "update")
 
     for dir in "${function_dirs[@]}"; do
         info "Checking directory: $dir"
