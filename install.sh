@@ -138,6 +138,20 @@ setup_repository() {
 create_directories() {
     step "Creating directory structure..."
 
+    # Check if config directory is an old-style git repo installation
+    if [ -d "$CAULDRON_CONFIG_DIR/.git" ]; then
+        warn "Detected old installation format in $CAULDRON_CONFIG_DIR"
+        info "Backing up old installation..."
+
+        # Create backup
+        local backup_dir="$CAULDRON_CONFIG_DIR.backup.$(date +%s)"
+        mv "$CAULDRON_CONFIG_DIR" "$backup_dir"
+
+        success "Old installation backed up to $backup_dir"
+        info "You can safely delete this backup after verifying the new installation works"
+    fi
+
+    # Create fresh directory structure
     mkdir -p "$CAULDRON_CONFIG_DIR"/{functions,data,tools,backups}
 
     success "Directory structure created"
