@@ -436,6 +436,26 @@ install_node_dependencies() {
 install_essential_tools() {
     step "Installing essential tools..."
 
+    # Install uv for Python script running (needed for richify)
+    if ! command_exists uv; then
+        info "Installing uv..."
+        curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1 || true
+
+        # Add uv to PATH for current session
+        export PATH="$HOME/.cargo/bin:$PATH"
+    fi
+
+    # Install richify for markdown streaming
+    if [ ! -d "$HOME/.local/share/richify" ]; then
+        info "Installing richify..."
+        git clone --depth 1 https://github.com/gianlucatruda/richify.git "$HOME/.local/share/richify" >/dev/null 2>&1 || true
+        chmod +x "$HOME/.local/share/richify/richify.py" 2>/dev/null || true
+
+        # Create symlink in ~/.local/bin
+        mkdir -p "$HOME/.local/bin"
+        ln -sf "$HOME/.local/share/richify/richify.py" "$HOME/.local/bin/richify" 2>/dev/null || true
+    fi
+
     # This will be handled by the Fish function once loaded
     info "Essential tools will be installed on first use"
     info "Run 'installs -f \$CAULDRON_PATH/data/dependencies.json' to install all dependencies"
@@ -618,6 +638,7 @@ main() {
     run_migrations        # Run migrations with the installed functions
     setup_fish_config
     install_node_dependencies
+    install_essential_tools   # Install uv, richify, and other essential tools
     fix_shadowed_variables # Check and fix any shadowed variables
     verify_installation
     run_setup_wizard      # Interactive setup for user preferences

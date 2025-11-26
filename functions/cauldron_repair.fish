@@ -165,6 +165,16 @@ function cauldron_repair --description "Repair broken Cauldron installation"
         echo "  ✓ Fish configuration OK"
     end
 
+    # Check 8: Verify richify is installed (optional but recommended)
+    echo "→ Checking richify (optional markdown renderer)..."
+    if not command -q richify
+        set issues_found (math $issues_found + 1)
+        set -a issues "Richify not installed (optional - enhances markdown streaming)"
+        echo "  ⚠ Richify not found (optional)"
+    else
+        echo "  ✓ Richify installed"
+    end
+
     # Summary
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -322,6 +332,36 @@ function cauldron_repair --description "Repair broken Cauldron installation"
 
         echo "    ✓ Fish configuration updated"
         set issues_fixed (math $issues_fixed + 1)
+    end
+
+    # Fix 6: Install richify if missing
+    if string match -q "*Richify*" -- $issues
+        echo "  → Installing richify..."
+
+        # Install uv first if needed
+        if not command -q uv
+            echo "    → Installing uv (required for richify)..."
+            curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1
+            set -gx PATH $HOME/.cargo/bin $PATH
+        end
+
+        # Clone and setup richify
+        if not test -d $HOME/.local/share/richify
+            git clone --depth 1 https://github.com/gianlucatruda/richify.git $HOME/.local/share/richify >/dev/null 2>&1
+            chmod +x $HOME/.local/share/richify/richify.py
+        end
+
+        # Create symlink
+        mkdir -p $HOME/.local/bin
+        ln -sf $HOME/.local/share/richify/richify.py $HOME/.local/bin/richify
+
+        if command -q richify
+            echo "    ✓ Richify installed"
+            set issues_fixed (math $issues_fixed + 1)
+        else
+            echo "    ⚠ Richify installation may require PATH update"
+            echo "    Add ~/.local/bin to your PATH if richify is not accessible"
+        end
     end
 
     echo ""

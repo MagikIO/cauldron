@@ -472,6 +472,30 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     brew install gum
   end
 
+  # Install uv for Python script running (needed for richify)
+  if not command -q uv
+    echo "→ Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1
+    # Ensure uv is in path for current session
+    set -gx PATH $HOME/.cargo/bin $PATH
+  end
+
+  # Install richify for markdown streaming
+  if not test -d $HOME/.local/share/richify
+    echo "→ Installing richify for enhanced markdown streaming..."
+    git clone --depth 1 https://github.com/gianlucatruda/richify.git $HOME/.local/share/richify >/dev/null 2>&1
+    chmod +x $HOME/.local/share/richify/richify.py
+
+    # Create symlink in ~/.local/bin
+    mkdir -p $HOME/.local/bin
+    ln -sf $HOME/.local/share/richify/richify.py $HOME/.local/bin/richify
+    echo "  ✓ Richify installed"
+  else if not command -q richify
+    # Richify directory exists but symlink might be missing
+    mkdir -p $HOME/.local/bin
+    ln -sf $HOME/.local/share/richify/richify.py $HOME/.local/bin/richify
+  end
+
   # As long as their is a dependencies.json file we will install the dependencies
     if test -f $CAULDRON_PATH/dependencies.json
       set apt_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.apt[]')

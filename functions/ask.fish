@@ -161,21 +161,40 @@ function ask -a query
       prompt: $prompt
     }')
 
-    curl -s -X POST http://localhost:11434/api/generate \
-        -H "Content-Type: application/json" \
-        -d "$json_payload" | while read -l line
-            set response (echo $line | jq -r '.response')
-            set done (echo $line | jq -r '.done')
+    # Check if richify is available for enhanced markdown streaming
+    if command -v richify >/dev/null 2>&1
+        curl -s -X POST http://localhost:11434/api/generate \
+            -H "Content-Type: application/json" \
+            -d "$json_payload" | while read -l line
+                set response (echo $line | jq -r '.response')
+                set done (echo $line | jq -r '.done')
 
-            if test -n "$response"
-                echo -n "$response" >> $response_file
-                echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream the response with newlines
-            end
+                if test -n "$response"
+                    echo -n "$response" >> $response_file
+                    echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream to richify
+                end
 
-            if test "$done" = "true"
-                break
+                if test "$done" = "true"
+                    break
+                end
+            end | richify
+    else
+        curl -s -X POST http://localhost:11434/api/generate \
+            -H "Content-Type: application/json" \
+            -d "$json_payload" | while read -l line
+                set response (echo $line | jq -r '.response')
+                set done (echo $line | jq -r '.done')
+
+                if test -n "$response"
+                    echo -n "$response" >> $response_file
+                    echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream the response with newlines
+                end
+
+                if test "$done" = "true"
+                    break
+                end
             end
-        end
+    end
 
     echo ""  # Print a newline at the end
     set response_text (cat $response_file)
