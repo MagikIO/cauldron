@@ -11,19 +11,34 @@ function __build_personality_prompt --description "Build system prompt with pers
     end
 
     # Get active personality (project-specific or global)
-    set -l personality_query "
-        SELECT p.id, p.system_prompt, fr.relationship_level
-        FROM user_preferences up
-        JOIN personalities p ON up.preference_value = p.name
-        LEFT JOIN familiar_relationship fr ON p.id = fr.personality_id
-            AND (fr.project_path = '$project_path' OR (fr.project_path IS NULL AND '$project_path' = ''))
-        WHERE up.preference_key = 'active_personality'
-        AND (up.project_path = '$project_path' OR (up.project_path IS NULL AND '$project_path' = ''))
-        ORDER BY up.project_path DESC
-        LIMIT 1
-    "
+    # Try project-specific first, then fall back to global
+    set -l personality_data ""
 
-    set -l personality_data (sqlite3 "$CAULDRON_DATABASE" "$personality_query" 2>/dev/null)
+    if test -n "$project_path"
+        # Try project-specific personality first
+        set personality_data (sqlite3 "$CAULDRON_DATABASE" "
+            SELECT p.id, p.system_prompt, COALESCE(fr.relationship_level, 0)
+            FROM user_preferences up
+            JOIN personalities p ON up.preference_value = p.name
+            LEFT JOIN familiar_relationship fr ON p.id = fr.personality_id AND fr.project_path = '$project_path'
+            WHERE up.preference_key = 'active_personality'
+            AND up.project_path = '$project_path'
+            LIMIT 1
+        " 2>/dev/null)
+    end
+
+    # Fall back to global personality if no project-specific one found
+    if test -z "$personality_data"
+        set personality_data (sqlite3 "$CAULDRON_DATABASE" "
+            SELECT p.id, p.system_prompt, COALESCE(fr.relationship_level, 0)
+            FROM user_preferences up
+            JOIN personalities p ON up.preference_value = p.name
+            LEFT JOIN familiar_relationship fr ON p.id = fr.personality_id AND fr.project_path IS NULL
+            WHERE up.preference_key = 'active_personality'
+            AND up.project_path IS NULL
+            LIMIT 1
+        " 2>/dev/null)
+    end
 
     if test -z "$personality_data"
         # Fallback to default
@@ -122,17 +137,37 @@ function __build_personality_prompt --description "Build system prompt with pers
 
     # Error rate adaptations (HIGHEST PRIORITY)
     if test "$consecutive_errors" -ge 3
-        set patience (math "min(10, $patience + 2)")
-        set verbosity (math "min(10, $verbosity + 1)")
+        set -l new_patience (math "$patience + 2")
+        if test "$new_patience" -le 10
+            set patience $new_patience
+        else
+            set patience 10
+        end
+        set -l new_verbosity (math "$verbosity + 1")
+        if test "$new_verbosity" -le 10
+            set verbosity $new_verbosity
+        else
+            set verbosity 10
+        end
         set enhanced_prompt "$enhanced_prompt\n\nThe user has encountered several errors recently. Be extra patient and provide more detailed, step-by-step guidance."
     else if test (awk -v rate="$error_rate" 'BEGIN {print (rate > 0.5)}') -eq 1
-        set patience (math "min(10, $patience + 1)")
+        set -l new_patience (math "$patience + 1")
+        if test "$new_patience" -le 10
+            set patience $new_patience
+        else
+            set patience 10
+        end
         set enhanced_prompt "$enhanced_prompt\n\nThe user is working through some challenges. Be supportive and provide clear explanations."
     end
 
     # Project complexity adaptations (MEDIUM PRIORITY)
     if test "$complexity" -gt 7
-        set verbosity (math "min(10, $verbosity + 1)")
+        set -l new_verbosity (math "$verbosity + 1")
+        if test "$new_verbosity" -le 10
+            set verbosity $new_verbosity
+        else
+            set verbosity 10
+        end
         set enhanced_prompt "$enhanced_prompt\n\nThis is a complex project. Provide more detailed explanations and consider edge cases."
     end
 

@@ -10,15 +10,32 @@ function __track_interaction --description "Track interaction and update relatio
         set success 0
     end
 
-    # Get active personality
-    set -l personality_id (sqlite3 "$CAULDRON_DATABASE" "
-        SELECT p.id
-        FROM user_preferences up
-        JOIN personalities p ON up.preference_value = p.name
-        WHERE up.preference_key = 'active_personality'
-        AND up.project_path IS NULL
-        LIMIT 1
-    " 2>/dev/null)
+    # Get active personality (project-specific or global)
+    set -l personality_id ""
+
+    # Try project-specific first
+    if test -n "$project_path"
+        set personality_id (sqlite3 "$CAULDRON_DATABASE" "
+            SELECT p.id
+            FROM user_preferences up
+            JOIN personalities p ON up.preference_value = p.name
+            WHERE up.preference_key = 'active_personality'
+            AND up.project_path = '$project_path'
+            LIMIT 1
+        " 2>/dev/null)
+    end
+
+    # Fall back to global if not found
+    if test -z "$personality_id"
+        set personality_id (sqlite3 "$CAULDRON_DATABASE" "
+            SELECT p.id
+            FROM user_preferences up
+            JOIN personalities p ON up.preference_value = p.name
+            WHERE up.preference_key = 'active_personality'
+            AND up.project_path IS NULL
+            LIMIT 1
+        " 2>/dev/null)
+    end
 
     if test -z "$personality_id"
         return 0
@@ -44,7 +61,12 @@ function __track_interaction --description "Track interaction and update relatio
         # Calculate relationship change: max(1, (100 - current_level) / 20)
         set -l temp_calc (math "100 - $current_rel_level")
         set -l temp_div (math "$temp_calc / 20")
-        set relationship_change (math "max(1, $temp_div)")
+        # Fish's math doesn't have max(), so we use a conditional
+        if test (math "$temp_div >= 1") -eq 1
+            set relationship_change (math "round($temp_div)")
+        else
+            set relationship_change 1
+        end
 
         sqlite3 "$CAULDRON_DATABASE" "
             UPDATE familiar_relationship
