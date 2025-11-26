@@ -1,6 +1,6 @@
 function ask -a query
   # Version Number
-  set -l func_version "4.2.1"
+  set -l func_version "4.2.2"
   # Flag options
   set -l options v/version h/help m/markdown c/context= n/no-memory
   argparse -n ask $options -- $argv
@@ -170,10 +170,13 @@ function ask -a query
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
-                    # Save raw response to file (without quotes)
-                    echo -n (echo "$response" | sed 's/^"\(.*\)"$/\1/') >> $response_file
-                    # Convert escape sequences and remove quotes for display
-                    echo -n (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g; s/^"\(.*\)"$/\1/')
+                    # Step 1: Convert escape sequences (keeps quotes)
+                    set processed (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
+                    # Step 2: Remove quotes (first and last character)
+                    set processed (echo "$processed" | sed 's/^.\(.*\).$/\1/')
+                    # Save to file and stream to richify
+                    echo -n "$processed" >> $response_file
+                    echo -n "$processed"
                 end
 
                 if test "$done" = "true"
@@ -188,10 +191,13 @@ function ask -a query
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
-                    # Save raw response to file (without quotes)
-                    echo -n (echo "$response" | sed 's/^"\(.*\)"$/\1/') >> $response_file
-                    # Convert escape sequences and remove quotes for display
-                    echo -n (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g; s/^"\(.*\)"$/\1/')
+                    # Step 1: Convert escape sequences (keeps quotes)
+                    set processed (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
+                    # Step 2: Remove quotes (first and last character)
+                    set processed (echo "$processed" | sed 's/^.\(.*\).$/\1/')
+                    # Save to file and display
+                    echo -n "$processed" >> $response_file
+                    echo -n "$processed"
                 end
 
                 if test "$done" = "true"
