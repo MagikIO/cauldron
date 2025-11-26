@@ -1,9 +1,9 @@
 #!/usr/bin/env fish
 
 function cauldron_update -d 'Update Cauldron to the latest version'
-  set -l func_version "2.1.2"
+  set -l func_version "2.1.3"
   set cauldron_category "Update"
-  set -l options v/version h/help c/check-only b/branch=
+  set -l options v/version h/help c/check-only b/branch= skip-git-sync
   argparse -n cauldron_update $options -- $argv
 
   # if they asked the version just return it
@@ -49,25 +49,39 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # STEP 2: GIT SYNCHRONIZATION
   # ============================================================================
   
-  set -l check_only_flag (set -q _flag_check_only && echo "1" || echo "0")
-  __update_git_sync $branch $check_only_flag
-  set -l git_status $status
-  
-  switch $git_status
-    case 0
-      # Already up to date
-      return 0
-    case 1
-      # Updates available (check-only mode)
-      return 0
-    case 2
-      # Error occurred
-      return 1
-    case 3
-      # User cancelled
-      return 0
-    case 4
-      # Successfully updated - continue to installation
+  # Skip git sync if this is a re-execution after code update
+  if not set -q _flag_skip_git_sync
+    set -l check_only_flag (set -q _flag_check_only && echo "1" || echo "0")
+    __update_git_sync $branch $check_only_flag
+    set -l git_status $status
+    
+    switch $git_status
+      case 0
+        # Already up to date
+        return 0
+      case 1
+        # Updates available (check-only mode)
+        return 0
+      case 2
+        # Error occurred
+        return 1
+      case 3
+        # User cancelled
+        return 0
+      case 4
+        # Successfully updated - re-execute with new code
+        echo ""
+        echo "🔄 Reloading updated script..."
+        
+        # Build args to pass through
+        set -l reexec_args --skip-git-sync
+        if set -q _flag_branch
+          set -a reexec_args --branch $_flag_branch
+        end
+        
+        # Re-execute with updated code
+        exec fish -c "source '$CAULDRON_PATH/update/cauldron_update.fish'; cauldron_update $reexec_args"
+    end
   end
 
   # ============================================================================
