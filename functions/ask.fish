@@ -171,7 +171,7 @@ function ask -a query
 
                 if test -n "$response"
                     echo -n "$response" >> $response_file
-                    echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream to richify
+                    printf "%s" "$response"  # Stream to richify without sed processing
                 end
 
                 if test "$done" = "true"
@@ -187,7 +187,7 @@ function ask -a query
 
                 if test -n "$response"
                     echo -n "$response" >> $response_file
-                    echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream the response with newlines
+                    printf "%s" "$response"  # Use printf instead of echo -n with sed
                 end
 
                 if test "$done" = "true"
