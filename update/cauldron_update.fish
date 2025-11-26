@@ -286,4 +286,5 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   echo "Please restart your Fish shell to use the updated version:"
   echo "  exec fish"
   echo ""
+  return 0
 end
