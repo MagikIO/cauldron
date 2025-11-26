@@ -162,7 +162,7 @@ function ask -a query
     }')
 
     # Check if richify is available for enhanced markdown streaming
-    if command -v richify >/dev/null 2>&1
+    if test -f "$HOME/.local/share/richify/richify.py"
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
             -d "$json_payload" | while read -l line
@@ -177,7 +177,7 @@ function ask -a query
                 if test "$done" = "true"
                     break
                 end
-            end | richify
+            end | uv run --script "$HOME/.local/share/richify/richify.py"
     else
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
