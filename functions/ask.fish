@@ -152,7 +152,11 @@ function ask -a query
   end
 
   # Extract and process the response
-  set familiar_response (echo $ai_response | jq -r '.response')
+  # Use jq without -r to keep escape sequences, then process them with sed
+  set familiar_response (echo $ai_response | jq '.response' | sed 's/\\n/\n/g; s/\\t/\t/g')
+
+  # Remove the surrounding quotes from the JSON string
+  set familiar_response (echo $familiar_response | sed 's/^.\(.*\).$/\1/')
 
   # Store the full response for saving to memory
   set response_text $familiar_response
