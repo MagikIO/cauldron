@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function cauldron
-  set -l func_version "1.3.0"
+  set -l func_version "1.4.0"
   set -l cauldron_category "CLI"
   if not set -q CAULDRON_PATH
     set -Ux CAULDRON_PATH $HOME/.cauldron
@@ -12,7 +12,7 @@ function cauldron
   set script_dir (dirname (status --current-filename))
     
   # Define options that can be passed
-  set -l options "v/version" "h/help" "D/new-docs=" "z/cauldron" "u/update" "t/tmux="
+  set -l options "v/version" "h/help" "D/new-docs=" "z/cauldron" "u/update" "r/repair" "t/tmux="
   argparse -n cauldron $options -- $argv
 
   # If the user passes the -v or --version flag, print the version number
@@ -39,9 +39,15 @@ function cauldron
     return 0
   end
 
-  # If the user passes the -u or --update flag, run __cauldron_update
+  # If the user passes the -u or --update flag, run cauldron_update
   if set -q _flag_u; or set -q _flag_update
     cauldron_update
+    return 0
+  end
+
+  # If the user passes the -r or --repair flag, run cauldron_repair --fix-all
+  if set -q _flag_r; or set -q _flag_repair
+    cauldron_repair --fix-all
     return 0
   end
 
