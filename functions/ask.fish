@@ -161,15 +161,39 @@ function ask -a query
       prompt: $prompt
     }')
 
+    # Use temp files to track state across iterations (workaround for pipeline scoping)
+    set -l state_file (mktemp)
+    echo "0" > $state_file  # previous_lines
+
     curl -s -X POST http://localhost:11434/api/generate \
         -H "Content-Type: application/json" \
         -d "$json_payload" | while read -l line
-            set response (echo $line | jq -r '.response')
-            set done (echo $line | jq -r '.done')
+            set -l response (echo $line | jq -r '.response')
+            set -l done (echo $line | jq -r '.done')
 
-            if test -n "$response"
+            if test -n "$response"; and test "$response" != "null"
+                # Accumulate the response in the file
                 echo -n "$response" >> $response_file
-                echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream the response with newlines
+
+                # Read previous line count
+                set -l previous_lines (cat $state_file)
+
+                # Move cursor up to beginning of previous render (if not first time)
+                if test $previous_lines -gt 0
+                    # Move cursor up by previous_lines
+                    tput cuu $previous_lines 2>/dev/null
+                    # Clear from cursor to end of screen
+                    tput ed 2>/dev/null
+                end
+
+                # Read accumulated text and render with glow
+                set -l accumulated_text (cat $response_file)
+                set -l rendered (printf "%s" $accumulated_text | glow --style auto)
+                printf "%s" $rendered
+
+                # Count lines in rendered output and save for next iteration
+                set -l new_line_count (printf "%s\n" $rendered | wc -l)
+                echo $new_line_count > $state_file
             end
 
             if test "$done" = "true"
@@ -179,6 +203,7 @@ function ask -a query
 
     echo ""  # Print a newline at the end
     set response_text (cat $response_file)
+    rm -f $state_file
   end
 
   # Save conversation to memory (unless --no-memory flag is set)
