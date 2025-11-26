@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function cauldron_update -d 'Update Cauldron to the latest version'
-  set -l func_version "2.1.6"
+  set -l func_version "2.1.7"
   set cauldron_category "Update"
   set -l options v/version h/help c/check-only b/branch= skip-git-sync
   argparse -n cauldron_update $options -- $argv
@@ -55,8 +55,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     __update_git_sync $branch $check_only_flag
     set -l git_status $status
 
-    echo "DEBUG: git_status = $git_status" >&2
-
     switch $git_status
       case 0
         # Already up to date
@@ -72,20 +70,17 @@ function cauldron_update -d 'Update Cauldron to the latest version'
         return 0
       case 4
         # Successfully updated - re-execute with new code
-        echo "DEBUG: Entered case 4 block" >&2
         echo ""
         echo "🔄 Reloading updated script..."
-        
+
         # Build args to pass through
         set -l reexec_args --skip-git-sync
         if set -q _flag_branch
           set -a reexec_args --branch $_flag_branch
         end
-        
+
         # Re-execute with updated code
-        echo "DEBUG: About to exec with args: $reexec_args" >&2
         exec fish -c "source '$CAULDRON_PATH/update/cauldron_update.fish'; cauldron_update $reexec_args"
-        echo "DEBUG: This line should never appear (exec failed)" >&2
     end
   end
 
