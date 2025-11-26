@@ -1,6 +1,6 @@
 function ask -a query
   # Version Number
-  set -l func_version "4.1.0"
+  set -l func_version "4.1.1"
   # Flag options
   set -l options v/version h/help m/markdown c/context= n/no-memory
   argparse -n ask $options -- $argv
