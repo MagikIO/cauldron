@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function cauldron_update -d 'Update Cauldron to the latest version'
-  set -l func_version "2.1.5"
+  set -l func_version "2.1.6"
   set cauldron_category "Update"
   set -l options v/version h/help c/check-only b/branch= skip-git-sync
   argparse -n cauldron_update $options -- $argv
