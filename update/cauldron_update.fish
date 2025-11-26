@@ -54,7 +54,9 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     set -l check_only_flag (set -q _flag_check_only && echo "1" || echo "0")
     __update_git_sync $branch $check_only_flag
     set -l git_status $status
-    
+
+    echo "DEBUG: git_status = $git_status" >&2
+
     switch $git_status
       case 0
         # Already up to date
@@ -70,6 +72,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
         return 0
       case 4
         # Successfully updated - re-execute with new code
+        echo "DEBUG: Entered case 4 block" >&2
         echo ""
         echo "🔄 Reloading updated script..."
         
@@ -80,7 +83,9 @@ function cauldron_update -d 'Update Cauldron to the latest version'
         end
         
         # Re-execute with updated code
+        echo "DEBUG: About to exec with args: $reexec_args" >&2
         exec fish -c "source '$CAULDRON_PATH/update/cauldron_update.fish'; cauldron_update $reexec_args"
+        echo "DEBUG: This line should never appear (exec failed)" >&2
     end
   end
 
