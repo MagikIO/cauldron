@@ -155,7 +155,7 @@ function ask -a query
       printf "$familiar_response" | bat --language="md" --theme="auto" --paging=never
   else
       # Just output directly
-      printf "$familiar_response\n"
+      printf "$familiar_response" | bat --language="md" --color="always" --paging=never
   end
 
   # Save conversation to memory (unless --no-memory flag is set)
