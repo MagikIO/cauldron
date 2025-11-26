@@ -171,12 +171,12 @@ function ask -a query
 
                 if test -n "$response"
                     # Step 1: Convert escape sequences (keeps quotes)
-                    set processed (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
+                    set processed (printf '%s' "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
                     # Step 2: Remove quotes (first and last character)
-                    set processed (echo "$processed" | sed 's/^.\(.*\).$/\1/')
+                    set processed (printf '%s' "$processed" | sed 's/^.\(.*\).$/\1/')
                     # Save to file and stream to richify
-                    echo -n "$processed" >> $response_file
-                    echo -n "$processed"
+                    printf '%s' "$processed" >> $response_file
+                    printf '%s' "$processed"
                 end
 
                 if test "$done" = "true"
@@ -192,12 +192,12 @@ function ask -a query
 
                 if test -n "$response"
                     # Step 1: Convert escape sequences (keeps quotes)
-                    set processed (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
+                    set processed (printf '%s' "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
                     # Step 2: Remove quotes (first and last character)
-                    set processed (echo "$processed" | sed 's/^.\(.*\).$/\1/')
+                    set processed (printf '%s' "$processed" | sed 's/^.\(.*\).$/\1/')
                     # Save to file and display
-                    echo -n "$processed" >> $response_file
-                    echo -n "$processed"
+                    printf '%s' "$processed" >> $response_file
+                    printf '%s' "$processed"
                 end
 
                 if test "$done" = "true"
