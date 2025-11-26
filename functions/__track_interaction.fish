@@ -51,6 +51,7 @@ function __track_interaction --description "Track interaction and update relatio
             SELECT COALESCE(relationship_level, 0)
             FROM familiar_relationship
             WHERE personality_id = $personality_id AND project_path IS NULL
+            LIMIT 1
         " 2>/dev/null)
 
         # Default to 0 if not found
@@ -61,9 +62,10 @@ function __track_interaction --description "Track interaction and update relatio
         # Calculate relationship change: max(1, (100 - current_level) / 20)
         set -l temp_calc (math "100 - $current_rel_level")
         set -l temp_div (math "$temp_calc / 20")
-        # Fish's math doesn't have max(), so we use a conditional
-        if test (math "$temp_div >= 1") -eq 1
-            set relationship_change (math "round($temp_div)")
+        # Round and ensure minimum of 1
+        set -l temp_div_rounded (math "round($temp_div)")
+        if test "$temp_div_rounded" -ge 1
+            set relationship_change $temp_div_rounded
         else
             set relationship_change 1
         end
