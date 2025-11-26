@@ -166,7 +166,7 @@ function ask -a query
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
             -d "$json_payload" | while read -l line
-                set response (echo $line | jq -r '.response')
+                set response (echo $ai_response | jq '.response' | sed 's/\\n/\n/g; s/\\t/\t/g')
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
