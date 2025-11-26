@@ -1,8 +1,8 @@
 function ask -a query
   # Version Number
-  set -l func_version "3.0.0"
+  set -l func_version "4.0.0"
   # Flag options
-  set -l options v/version h/help m/markdown c/context= n/no-memory
+  set -l options v/version h/help c/context= n/no-memory
   argparse -n ask $options -- $argv
 
   if test -z "$query"
@@ -19,18 +19,18 @@ function ask -a query
       echo "Usage: ask <question>"
       echo "Version: $func_version"
       echo "Ask a question to the llama3.2 model with personality and context awareness"
+      echo "Responses are rendered with syntax-highlighted markdown"
       echo
       echo "Options:"
       echo "  -v, --version    Show the version number"
       echo "  -h, --help       Show this help message"
-      echo "  -m, --markdown   Return the response in markdown format"
       echo "  -c, --context    Amount of conversation history to include (default: 5)"
       echo "  -n, --no-memory  Don't save this conversation to memory"
       echo
       echo "Examples:"
       echo "  ask 'What is the meaning of life?'"
-      echo "  ask 'What is the meaning of life?' -m"
       echo "  ask 'Explain my last question' -c 10"
+      echo "  ask 'Tell me a joke' -n"
       echo
       echo "Your familiar's personality affects how they respond."
       echo "Use 'personality list' to see available personalities."
@@ -131,74 +131,34 @@ function ask -a query
   set system_prompt "$system_prompt\n\nYou respond to questions in markdown format. You have been asked: $query"
 
   set response_text ""
-  set -l response_file (mktemp)
 
-  if set -q _flag_markdown
-    # Build JSON payload using jq to properly escape the prompt
-    set -l json_payload (jq -n --arg model "llama3.2" --arg prompt "$system_prompt" '{
-      model: $model,
-      prompt: $prompt,
-      stream: false
-    }')
+  # Build JSON payload using jq to properly escape the prompt
+  set -l json_payload (jq -n --arg model "llama3.2" --arg prompt "$system_prompt" '{
+    model: $model,
+    prompt: $prompt,
+    stream: false
+  }')
 
+  # Show spinner while waiting for response
+  if command -v gum >/dev/null 2>&1
+    set ai_response (gum spin --spinner moon --title "Consulting your familiar..." -- \
+      curl -s -X POST http://localhost:11434/api/generate \
+        -H "Content-Type: application/json" \
+        -d "$json_payload")
+  else
     set ai_response (curl -s -X POST http://localhost:11434/api/generate \
       -H "Content-Type: application/json" \
       -d "$json_payload")
-
-      set familiar_response (echo $ai_response | jq '.response' | sed 's/\\n/\n/g; s/\\t/\t/g')
-
-      # Now we remove the first and last characters from the string
-      set familiar_response (echo $familiar_response | sed 's/^.\(.*\).$/\1/')
-
-      # Store the full response for saving to memory
-      set response_text $familiar_response
-
-      printf "$familiar_response" | bat --language="md" --theme="auto" --paging=never
-  else
-    # Build JSON payload using jq to properly escape the prompt
-    set -l json_payload (jq -n --arg model "llama3.2" --arg prompt "$system_prompt" '{
-      model: $model,
-      prompt: $prompt
-    }')
-
-    # Check if richify is available for enhanced markdown streaming
-    if test -f "$HOME/.local/share/richify/richify.py"
-        curl -s -X POST http://localhost:11434/api/generate \
-            -H "Content-Type: application/json" \
-            -d "$json_payload" | while read -l line
-                set response (echo $line | jq -r '.response')
-                set done (echo $line | jq -r '.done')
-
-                if test -n "$response"
-                    echo -n "$response" >> $response_file
-                    printf "%s" "$response"  # Stream to richify without sed processing
-                end
-
-                if test "$done" = "true"
-                    break
-                end
-            end | uv run --script "$HOME/.local/share/richify/richify.py"
-    else
-        curl -s -X POST http://localhost:11434/api/generate \
-            -H "Content-Type: application/json" \
-            -d "$json_payload" | while read -l line
-                set response (echo $line | jq -r '.response')
-                set done (echo $line | jq -r '.done')
-
-                if test -n "$response"
-                    echo -n "$response" >> $response_file
-                    printf "%s" "$response"  # Use printf instead of echo -n with sed
-                end
-
-                if test "$done" = "true"
-                    break
-                end
-            end
-    end
-
-    echo ""  # Print a newline at the end
-    set response_text (cat $response_file)
   end
+
+  # Extract and process the response
+  set familiar_response (echo $ai_response | jq -r '.response')
+
+  # Store the full response for saving to memory
+  set response_text $familiar_response
+
+  # Render with bat for beautiful markdown display
+  printf "%s\n" "$familiar_response" | bat --language="md" --style="auto" --paging=never
 
   # Save conversation to memory (unless --no-memory flag is set)
   if not set -q _flag_no_memory
@@ -216,7 +176,4 @@ function ask -a query
           __track_interaction --failure 2>/dev/null
       end
   end
-
-  # Clean up temp file
-  rm -f $response_file
 end
