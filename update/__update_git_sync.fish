@@ -10,6 +10,7 @@ function __update_git_sync -d 'Synchronize Cauldron installation with remote rep
   #   1 - Updates available (check-only mode)
   #   2 - Error occurred
   #   3 - User cancelled update
+  #   4 - Successfully updated (continue to installation)
 
   set -l branch $argv[1]
   set -l check_only $argv[2]
@@ -106,5 +107,5 @@ function __update_git_sync -d 'Synchronize Cauldron installation with remote rep
   echo "Changes applied:"
   git -C "$CAULDRON_PATH" log --oneline --decorate $local_hash..HEAD | head -n 10
 
-  return 0
+  return 4
 end

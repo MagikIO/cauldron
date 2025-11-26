@@ -66,6 +66,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     case 3
       # User cancelled
       return 0
+    case 4
+      # Successfully updated - continue to installation
   end
 
   # ============================================================================
