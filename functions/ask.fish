@@ -178,27 +178,17 @@ function ask -a query
                 # Read previous line count
                 set -l previous_lines (cat $state_file)
 
-                # If not first render, move cursor up and clear previous content
+                # Move cursor up to beginning of previous render (if not first time)
                 if test $previous_lines -gt 0
-                    # Move cursor up to beginning of previous render
+                    # Move cursor up by previous_lines
                     tput cuu $previous_lines 2>/dev/null
-                    # Clear each line of the previous render
-                    for i in (seq $previous_lines)
-                        printf "\r"  # Move to start of line
-                        tput el 2>/dev/null  # Clear to end of line
-                        if test $i -lt $previous_lines
-                            tput cud1 2>/dev/null  # Move down one line
-                        end
-                    end
-                    # Move cursor back to start position
-                    tput cuu $previous_lines 2>/dev/null
+                    # Clear from cursor to end of screen
+                    tput ed 2>/dev/null
                 end
 
                 # Read accumulated text and render with glow
                 set -l accumulated_text (cat $response_file)
                 set -l rendered (printf "%s" $accumulated_text | glow --style auto)
-
-                # Print the rendered content
                 printf "%s" $rendered
 
                 # Count lines in rendered output and save for next iteration
