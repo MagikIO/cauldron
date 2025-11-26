@@ -286,12 +286,4 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   echo "Please restart your Fish shell to use the updated version:"
   echo "  exec fish"
   echo ""
-  echo "Debug log saved to: $debug_log"
-  echo ""
-  
-  # Pause to prevent terminal auto-closure
-  read -P "Press Enter to continue..."
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] User acknowledged completion" >> $debug_log
-
-  return 0
 end
