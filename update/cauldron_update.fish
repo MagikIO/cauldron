@@ -157,15 +157,13 @@ function cauldron_update -d 'Update Cauldron to the latest version'
     return 1
   end
 
-  cd "$CAULDRON_PATH"
-
   # Fetch latest changes
   echo "→ Checking for updates on branch '$branch'..."
-  git fetch origin $branch 2>/dev/null
+  git -C "$CAULDRON_PATH" fetch origin $branch 2>/dev/null
 
   # Check if updates are available
-  set -l local_hash (git rev-parse HEAD)
-  set -l remote_hash (git rev-parse origin/$branch 2>/dev/null)
+  set -l local_hash (git -C "$CAULDRON_PATH" rev-parse HEAD)
+  set -l remote_hash (git -C "$CAULDRON_PATH" rev-parse origin/$branch 2>/dev/null)
 
   if test "$local_hash" = "$remote_hash"
     echo "✓ Cauldron is already up to date!"
@@ -176,7 +174,7 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   echo ""
   echo "Updates available:"
   echo ""
-  git log --oneline --decorate --graph HEAD..origin/$branch | head -n 10
+  git -C "$CAULDRON_PATH" log --oneline --decorate --graph HEAD..origin/$branch | head -n 10
 
   if set -q _flag_check_only
     echo ""
@@ -212,11 +210,11 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   # Stash local changes
   echo "→ Stashing local changes..."
-  git stash push -m "Cauldron auto-update stash (date +%Y%m%d_%H%M%S)" 2>/dev/null
+  git -C "$CAULDRON_PATH" stash push -m "Cauldron auto-update stash (date +%Y%m%d_%H%M%S)" 2>/dev/null
 
   # Pull updates
   echo "→ Pulling latest changes..."
-  if not git pull origin $branch --rebase
+  if not git -C "$CAULDRON_PATH" pull origin $branch --rebase
     echo "Error: Failed to pull updates"
     echo "Your local changes have been stashed"
     echo "Run 'cd $CAULDRON_PATH && git stash pop' to restore them"
