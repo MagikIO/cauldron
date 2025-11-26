@@ -153,7 +153,7 @@ function ask -a query
       # Store the full response for saving to memory
       set response_text $familiar_response
 
-      printf "$familiar_response" | bat --language="md" --theme="TwoDark" --paging=never
+      printf "$familiar_response" | bat --language="md" --theme="auto" --paging=never
   else
     # Build JSON payload using jq to properly escape the prompt
     set -l json_payload (jq -n --arg model "llama3.2" --arg prompt "$system_prompt" '{
