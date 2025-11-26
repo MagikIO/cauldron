@@ -1,6 +1,6 @@
 function ask -a query
   # Version Number
-  set -l func_version "4.1.1"
+  set -l func_version "4.2.0"
   # Flag options
   set -l options v/version h/help m/markdown c/context= n/no-memory
   argparse -n ask $options -- $argv
@@ -166,12 +166,13 @@ function ask -a query
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
             -d "$json_payload" | while read -l line
-                set response (echo $ai_response | jq '.response' | sed 's/\\n/\n/g; s/\\t/\t/g')
+                set response (echo $line | jq -r '.response')
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
                     echo -n "$response" >> $response_file
-                    echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream to richify
+                    # Double newlines for proper markdown paragraph rendering
+                    printf "%s" "$response" | sed 'G'
                 end
 
                 if test "$done" = "true"
@@ -187,7 +188,8 @@ function ask -a query
 
                 if test -n "$response"
                     echo -n "$response" >> $response_file
-                    echo -n (echo "$response" | sed 's/\\n/\n/g')  # Stream the response with newlines
+                    # Stream the response with double newlines for readability
+                    printf "%s" "$response" | sed 'G'
                 end
 
                 if test "$done" = "true"
