@@ -34,6 +34,11 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Set branch (default to main if not specified)
   set -l branch (set -q _flag_branch && echo $_flag_branch || echo "main")
 
+  # Setup debug logging
+  set -l debug_log "/tmp/cauldron_update_debug.log"
+  echo "" > $debug_log
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting cauldron_update" >> $debug_log
+
   # Get sudo so we can update
   sudo -v
 
@@ -244,25 +249,44 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # Install required system packages (brew, pipx, tte, gum, etc.)
   # ============================================================================
 
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Step 4: System Dependencies" >> $debug_log
   __update_install_system_deps
+  set -l step4_status $status
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Step 4 completed with status: $step4_status" >> $debug_log
+  
+  if test $step4_status -ne 0
+    echo "⚠ Step 4 (System Dependencies) failed - check $debug_log for details"
+    return 1
+  end
 
   # ============================================================================
   # STEP 5: PACKAGE MANAGER DEPENDENCIES
   # Install apt/brew/snap packages from dependencies.json
   # ============================================================================
   
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Step 5: Package Manager Dependencies" >> $debug_log
   __update_install_package_manager_deps
+  set -l step5_status $status
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Step 5 completed with status: $step5_status" >> $debug_log
+  
+  if test $step5_status -ne 0
+    echo "⚠ Step 5 (Package Manager Dependencies) failed - check $debug_log for details"
+    return 1
+  end
 
   # ============================================================================
   # COMPLETION
   # Show what changed and prompt user to restart shell
   # ============================================================================
 
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Update completed successfully" >> $debug_log
   echo ""
   echo "✨ Cauldron updated successfully!"
   echo ""
   echo "Please restart your Fish shell to use the updated version:"
   echo "  exec fish"
+  echo ""
+  echo "Debug log saved to: $debug_log"
 
   return 0
 end
