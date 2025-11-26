@@ -128,7 +128,7 @@ function ask -a query
       set system_prompt "$system_prompt\n\nRecent conversation history: $conversation_history"
   end
 
-  set system_prompt "$system_prompt\n\nYou respond to questions in markdown format. You have been asked: $query"
+  set system_prompt "$system_prompt\n\nYou respond to questions in markdown format. Use blank lines (double newlines) between paragraphs and after headings for proper formatting. You have been asked: $query"
 
   set response_text ""
   set -l response_file (mktemp)
