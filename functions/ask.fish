@@ -166,17 +166,12 @@ function ask -a query
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
             -d "$json_payload" | while read -l line
-                set response (echo $line | jq '.response')
+                set response (echo $line | jq -r '.response')
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
-                    # Step 1: Convert escape sequences (keeps quotes)
-                    set processed (printf '%s' "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
-                    # Step 2: Remove quotes (first and last character)
-                    set processed (printf '%s' "$processed" | sed 's/^.\(.*\).$/\1/')
-                    # Save to file and stream to richify
-                    printf '%s' "$processed" >> $response_file
-                    printf '%s' "$processed"
+                    echo -n "$response" >> $response_file
+                    echo -n "$response"
                 end
 
                 if test "$done" = "true"
@@ -187,17 +182,12 @@ function ask -a query
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
             -d "$json_payload" | while read -l line
-                set response (echo $line | jq '.response')
+                set response (echo $line | jq -r '.response')
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
-                    # Step 1: Convert escape sequences (keeps quotes)
-                    set processed (printf '%s' "$response" | sed 's/\\n/\n/g; s/\\t/\t/g')
-                    # Step 2: Remove quotes (first and last character)
-                    set processed (printf '%s' "$processed" | sed 's/^.\(.*\).$/\1/')
-                    # Save to file and display
-                    printf '%s' "$processed" >> $response_file
-                    printf '%s' "$processed"
+                    echo -n "$response" >> $response_file
+                    echo -n "$response"
                 end
 
                 if test "$done" = "true"
