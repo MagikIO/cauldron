@@ -4,13 +4,21 @@ function __update_install_package_manager_deps -d 'Install dependencies from dep
   # Parses dependencies.json and installs apt/brew/snap packages
   # Returns: 0 on success
 
+  set -l debug_log "/tmp/cauldron_update_debug.log"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Starting" >> $debug_log
+
   if not test -f $CAULDRON_PATH/dependencies.json
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: No dependencies.json found" >> $debug_log
     return 0
   end
 
   set -l apt_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.apt[]')
   set -l brew_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.brew[]')
   set -l snap_dependencies (cat $CAULDRON_PATH/dependencies.json | jq -r '.snap[]')
+
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: APT deps: $apt_dependencies" >> $debug_log
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Brew deps: $brew_dependencies" >> $debug_log
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Snap deps: $snap_dependencies" >> $debug_log
 
   sudo -v
 
@@ -34,6 +42,7 @@ function __update_install_package_manager_deps -d 'Install dependencies from dep
   # Brew is run synchronously because it has issues running in background
   if test (count $brew_dependencies) -gt 0
     echo "→ Installing Brew packages..."
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Installing Brew packages" >> $debug_log
     set -l missing_deps
     for dep in $brew_dependencies
       if not type -q $dep
@@ -42,9 +51,11 @@ function __update_install_package_manager_deps -d 'Install dependencies from dep
     end
 
     if test (count $missing_deps) -gt 0
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Missing Brew deps: $missing_deps" >> $debug_log
       # Run brew synchronously with normal terminal output
       set -x HOMEBREW_NO_AUTO_UPDATE 1
-      brew install $missing_deps
+      brew install $missing_deps 2>> $debug_log
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Brew install completed" >> $debug_log
     end
 
     # Save brew dependency info to database
@@ -56,8 +67,11 @@ function __update_install_package_manager_deps -d 'Install dependencies from dep
       end
     end
     echo "  ✓ Brew packages installed"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Brew database updated" >> $debug_log
     echo ""
   end
+
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Starting parallel APT/Snap jobs" >> $debug_log
 
   # Job 1: Install all APT dependencies in parallel
   if test (count $apt_dependencies) -gt 0
@@ -195,5 +209,6 @@ function __update_install_package_manager_deps -d 'Install dependencies from dep
   # Cleanup temp files
   rm -rf "$temp_dir" 2>/dev/null
 
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] __update_install_package_manager_deps: Completed successfully" >> $debug_log
   return 0
 end
