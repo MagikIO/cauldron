@@ -50,7 +50,8 @@ function cauldron_update -d 'Update Cauldron to the latest version'
   # ============================================================================
   
   set -l check_only_flag (set -q _flag_check_only && echo "1" || echo "0")
-  set -l git_status (__update_git_sync $branch $check_only_flag)
+  __update_git_sync $branch $check_only_flag
+  set -l git_status $status
   
   switch $git_status
     case 0
@@ -243,18 +244,6 @@ function cauldron_update -d 'Update Cauldron to the latest version'
 
   echo ""
   echo "✨ Cauldron updated successfully!"
-  echo ""
-  
-  # Show changelog if we have the hash values from git sync
-  if set -q __UPDATE_LOCAL_HASH; and set -q __UPDATE_REMOTE_HASH
-    echo "Changes applied:"
-    git -C "$CAULDRON_PATH" log --oneline --decorate $__UPDATE_LOCAL_HASH..$__UPDATE_REMOTE_HASH
-    
-    # Clean up global variables
-    set -e __UPDATE_LOCAL_HASH
-    set -e __UPDATE_REMOTE_HASH
-  end
-
   echo ""
   echo "Please restart your Fish shell to use the updated version:"
   echo "  exec fish"

@@ -100,10 +100,11 @@ function __update_git_sync -d 'Synchronize Cauldron installation with remote rep
   end
 
   echo "✓ Code updated successfully"
+  echo ""
   
-  # Store local and remote hashes for completion message
-  set -g __UPDATE_LOCAL_HASH $local_hash
-  set -g __UPDATE_REMOTE_HASH $remote_hash
+  # Show what changed
+  echo "Changes applied:"
+  git -C "$CAULDRON_PATH" log --oneline --decorate $local_hash..HEAD | head -n 10
 
   return 0
 end
