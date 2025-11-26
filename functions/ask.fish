@@ -178,33 +178,31 @@ function ask -a query
                 # Read previous line count
                 set -l previous_lines (cat $state_file)
 
-                # Move cursor up to beginning of previous render (if not first time)
+                # If not first render, move cursor up and clear previous content
                 if test $previous_lines -gt 0
-                    # Move cursor up by previous_lines
+                    # Move cursor up to beginning of previous render
+                    tput cuu $previous_lines 2>/dev/null
+                    # Clear each line of the previous render
+                    for i in (seq $previous_lines)
+                        printf "\r"  # Move to start of line
+                        tput el 2>/dev/null  # Clear to end of line
+                        if test $i -lt $previous_lines
+                            tput cud1 2>/dev/null  # Move down one line
+                        end
+                    end
+                    # Move cursor back to start position
                     tput cuu $previous_lines 2>/dev/null
                 end
 
                 # Read accumulated text and render with glow
                 set -l accumulated_text (cat $response_file)
                 set -l rendered (printf "%s" $accumulated_text | glow --style auto)
-                set -l new_line_count (printf "%s\n" $rendered | wc -l)
 
                 # Print the rendered content
                 printf "%s" $rendered
 
-                # If new content has fewer lines than previous, clear the extra lines
-                if test $previous_lines -gt $new_line_count
-                    set -l lines_to_clear (math $previous_lines - $new_line_count)
-                    for i in (seq $lines_to_clear)
-                        # Move down one line, clear it, then move back up
-                        printf "\n"
-                        tput el 2>/dev/null
-                    end
-                    # Move cursor back up to end of actual content
-                    tput cuu $lines_to_clear 2>/dev/null
-                end
-
-                # Save line count for next iteration
+                # Count lines in rendered output and save for next iteration
+                set -l new_line_count (printf "%s\n" $rendered | wc -l)
                 echo $new_line_count > $state_file
             end
 
