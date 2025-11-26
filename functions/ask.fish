@@ -1,6 +1,6 @@
 function ask -a query
   # Version Number
-  set -l func_version "4.2.0"
+  set -l func_version "4.2.1"
   # Flag options
   set -l options v/version h/help m/markdown c/context= n/no-memory
   argparse -n ask $options -- $argv
@@ -166,12 +166,14 @@ function ask -a query
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
             -d "$json_payload" | while read -l line
-                set response (echo $line | jq -r '.response')
+                set response (echo $line | jq '.response')
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
-                    echo -n "$response" >> $response_file
-                    echo -n "$response"
+                    # Save raw response to file (without quotes)
+                    echo -n (echo "$response" | sed 's/^"\(.*\)"$/\1/') >> $response_file
+                    # Convert escape sequences and remove quotes for display
+                    echo -n (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g; s/^"\(.*\)"$/\1/')
                 end
 
                 if test "$done" = "true"
@@ -182,12 +184,14 @@ function ask -a query
         curl -s -X POST http://localhost:11434/api/generate \
             -H "Content-Type: application/json" \
             -d "$json_payload" | while read -l line
-                set response (echo $line | jq -r '.response')
+                set response (echo $line | jq '.response')
                 set done (echo $line | jq -r '.done')
 
                 if test -n "$response"
-                    echo -n "$response" >> $response_file
-                    echo -n "$response"
+                    # Save raw response to file (without quotes)
+                    echo -n (echo "$response" | sed 's/^"\(.*\)"$/\1/') >> $response_file
+                    # Convert escape sequences and remove quotes for display
+                    echo -n (echo "$response" | sed 's/\\n/\n/g; s/\\t/\t/g; s/^"\(.*\)"$/\1/')
                 end
 
                 if test "$done" = "true"
