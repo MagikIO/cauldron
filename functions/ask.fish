@@ -171,8 +171,7 @@ function ask -a query
 
                 if test -n "$response"
                     echo -n "$response" >> $response_file
-                    # Double newlines for proper markdown paragraph rendering
-                    printf "%s" "$response" | sed 'G'
+                    echo -n "$response"
                 end
 
                 if test "$done" = "true"
@@ -188,8 +187,7 @@ function ask -a query
 
                 if test -n "$response"
                     echo -n "$response" >> $response_file
-                    # Stream the response with double newlines for readability
-                    printf "%s" "$response" | sed 'G'
+                    echo -n "$response"
                 end
 
                 if test "$done" = "true"
